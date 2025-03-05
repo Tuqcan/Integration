@@ -9,14 +9,14 @@ public class TrendyolProductIntegration : TrendyolIntegrationBase, ITrendyolProd
 {
     private string GetCreateProducsUrl() => $"{GetBaseUrl()}suppliers/{_supplierId}/v2/products";
     private string GetSupplierAddressUrl() => $"{GetBaseUrl()}suppliers/{_supplierId}/addresses";
-    private string GetBrandsUrl() => $"{GetBaseUrl()}brands";
-    private string GetCategoryTreeUrl() => $"{GetBaseUrl()}product-categories";
+    private string GetBrandsUrl() => $"{GetBaseUrl()}product/brands";
+    private string GetCategoryTreeUrl() => $"{GetBaseUrl()}product/product-categories";
     private string GetCategoryAttributesUrl(int categoryId) => $"{GetBaseUrl()}product-categories/{categoryId}/attributes";
     private string GetUpdateProductUrl() => $"{GetBaseUrl()}suppliers/{_supplierId}/v2/products";
     private string GetUpdatePriceAndStockUrl() => $"{GetBaseUrl()}suppliers/{_supplierId}/products/price-and-inventory";
     private string GetDeleteProductUrl() => $"{GetBaseUrl()}suppliers/{_supplierId}/v2/products";
     private string GetBatchRequestResultUrl(string batchRequestId) => $"{GetBaseUrl()}suppliers/{_supplierId}/products/batch-requests/{batchRequestId}";
-    private string GetFilterProductsUrl() => $"{GetBaseUrl()}suppliers/{_supplierId}/products";
+    private string GetFilterProductsUrl() => $"{GetBaseUrl()}product/sellers/{_supplierId}/products";
     public TrendyolProductIntegration(string supplierId, string apiKey, string apiSecret, bool isInProduction, string entegratorFirm) : base(supplierId, apiKey, apiSecret, isInProduction, entegratorFirm)
     {
     }
@@ -48,6 +48,7 @@ public class TrendyolProductIntegration : TrendyolIntegrationBase, ITrendyolProd
     /// <returns><inheritdoc/></returns>
     public async Task<FilterProductsResponseModel?> FilterProductsAsync(string filterQuery)
     {
+        var url = GetFilterProductsUrl() + filterQuery;
         return await InvokeRequestAsync<FilterProductsResponseModel>((client) => client.GetAsync(GetFilterProductsUrl() + filterQuery));
     }
 

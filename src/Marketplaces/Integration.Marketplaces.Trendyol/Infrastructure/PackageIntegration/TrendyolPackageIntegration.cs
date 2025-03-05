@@ -6,7 +6,7 @@ using Integration.Marketplaces.Trendyol.Infrastructure.PackageIntegration.Models
 namespace Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration;
 public class TrendyolPackageIntegration : TrendyolIntegrationBase, ITrendyolPackageIntegration, IMarketplaceIntegration
 {
-    private string GetShipmentPackagesUrl() => $"{GetBaseUrl()}suppliers/{_supplierId}/orders";
+    private string GetShipmentPackagesUrl() => $"{GetBaseUrl()}order/sellers/{_supplierId}/orders";
     private string GetUpdateTrackingNumberUrl(long shipmentPackageId) => $"{GetBaseUrl()}suppliers/{_supplierId}/{shipmentPackageId}/update-tracking-number";
     private string GetUpdatePackageUrl(long shipmentPackageId) => $"{GetBaseUrl()}suppliers/{_supplierId}//shipment-packages/{shipmentPackageId}";
     private string GetAddInvoiceLinkUrl() => $"{GetBaseUrl()}suppliers/{_supplierId}/supplier-invoice-links";
@@ -26,8 +26,9 @@ public class TrendyolPackageIntegration : TrendyolIntegrationBase, ITrendyolPack
     /// <param name="filterQuery"></param>
     /// <returns><inheritdoc/></returns>
     public async Task<GetShipmentPackagesResponseModel?> GetShipmentPackagesAsync(string filterQuery)
-    {
-        return await InvokeRequestAsync<GetShipmentPackagesResponseModel?>((client) => client.GetAsync(GetShipmentPackagesUrl() + filterQuery));
+    { 
+        var url = GetShipmentPackagesUrl() + (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
+        return await InvokeRequestAsync<GetShipmentPackagesResponseModel?>((client) => client.GetAsync(GetShipmentPackagesUrl() +( string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery)));
     }
 
     /// <summary>

@@ -5,8 +5,8 @@ using Integration.Hub;
 namespace Integration.Marketplaces.Trendyol.Infrastructure;
 public class TrendyolIntegrationBase : IntegrationBase
 {
-    public const string ProdBaseUrl = "https://api.trendyol.com/sapigw/";
-    public const string StageBaseUrl = "https://stageapi.trendyol.com/stagesapigw/";
+    public const string ProdBaseUrl = "https://apigw.trendyol.com/integration/";
+    public const string StageBaseUrl = "https://stageapigw.trendyol.com/integration/";
     protected readonly string _supplierId;
     protected readonly string _apiKey;
     protected readonly string _apiSecret;
@@ -31,6 +31,7 @@ public class TrendyolIntegrationBase : IntegrationBase
         SetSerializerOptions(new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
         });
     }
 

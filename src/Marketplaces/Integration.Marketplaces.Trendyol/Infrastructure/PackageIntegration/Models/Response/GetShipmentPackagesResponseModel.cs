@@ -1,13 +1,15 @@
 using Integration.Hub;
 using Integration.Marketplaces.Trendyol.Infrastructure.OrderIntegration.Constants;
+using System.Text.Json.Serialization;
 namespace Integration.Marketplaces.Trendyol.Infrastructure.PackageIntegration.Models.Response;
 public class GetShipmentPackagesResponseModel : PaginationModel
 {
-    public List<GetShipmentPackagePackageResponseModel> Contents { get; set; }
+    public List<GetShipmentPackagePackageResponseModel> Content { get; set; }
 
 }
 public class GetShipmentPackagePackageFastDeliveryOptionResponseModel : IResponseModel
 {
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public DeliveryOption Type { get; set; }
 }
 public class GetShipmentPackagePackageDiscountDetailResponseModel : IResponseModel
@@ -33,16 +35,16 @@ public class GetShipmentPackagePackageLineResponseModel : IResponseModel
     public List<GetShipmentPackagePackageFastDeliveryOptionResponseModel> FastDeliveryOptions { get; set; }
     public string CurrencyCode { get; set; }
     public string ProductColor { get; set; }
-    public int Id { get; set; }
+    public long Id { get; set; }
     public string Sku { get; set; }
-    public int VatBaseAmount { get; set; }
+    public decimal VatBaseAmount { get; set; }
     public string Barcode { get; set; }
     public string OrderLineItemStatusName { get; set; }
     public double Price { get; set; }
 }
 public class GetShipmentPackageShipmentAddressResponseModel : IResponseModel
 {
-    public int Id { get; set; }
+    public long Id { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Company { get; set; }
@@ -62,7 +64,7 @@ public class GetShipmentPackageShipmentAddressResponseModel : IResponseModel
 }
 public class GetShipmentPackageInvoiceAddressResponseModel : IResponseModel
 {
-    public int Id { get; set; }
+    public long Id { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Company { get; set; }
@@ -83,7 +85,9 @@ public class GetShipmentPackageInvoiceAddressResponseModel : IResponseModel
 }
 public class GetShipmentPackagesPackageHistoryResponseModel : IResponseModel
 {
-    public double CreatedDate { get; set; }
+    public long CreatedDate { get; set; }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public PackageStatus Status { get; set; }
 }
 public class GetShipmentPackagePackageResponseModel : IResponseModel
@@ -99,12 +103,12 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     public string CustomerEmail { get; set; }
     public int CustomerId { get; set; }
     public string CustomerLastName { get; set; }
-    public int Id { get; set; }
+    public long Id { get; set; }
     public long CargoTrackingNumber { get; set; }
     public string CargoTrackingLink { get; set; }
     public string CargoSenderNumber { get; set; }
     public string CargoProviderName { get; set; }
-    public string Lines { get; set; }
+    public List<GetShipmentPackagePackageLineResponseModel> Lines { get; set; }
     public long OrderDate { get; set; }
     public string TcIdentityNumber { get; set; }
     public string CurrencyCode { get; set; }
