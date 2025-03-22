@@ -1,39 +1,25 @@
-using System.Text;
-using System.Text.Json;
+using System.Net.Http;
 using Integration.Hub;
 
 namespace Integration.Marketplaces.Trendyol.Infrastructure;
-public class TrendyolIntegrationBase : IntegrationBase
+public abstract class TrendyolIntegrationBase : IntegrationBase
 {
-    public const string ProdBaseUrl = "https://apigw.trendyol.com/integration/";
-    public const string StageBaseUrl = "https://stageapigw.trendyol.com/integration/";
-    protected readonly string _supplierId;
-    protected readonly string _apiKey;
-    protected readonly string _apiSecret;
-    protected readonly string _entegratorFirm;
-    protected readonly bool _isInProduction;
+    protected readonly bool IsInProduction;
+    protected readonly string EntegratorFirm;
 
-    public TrendyolIntegrationBase(string supplierId, string apiKey, string apiSecret, bool isInProduction = true, string entegratorFirm = "SelfIntegration")
+    protected TrendyolIntegrationBase(IHttpClientFactory httpClientFactory, string supplierId, string apiKey, string apiSecret, bool isInProduction, string entegratorFirm)
+        : base(httpClientFactory, supplierId, apiKey, apiSecret)
     {
-        _supplierId = supplierId ?? throw new ArgumentNullException(nameof(supplierId));
-        _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
-        _apiSecret = apiSecret ?? throw new ArgumentNullException(nameof(apiSecret));
-        _isInProduction = isInProduction;
-        _entegratorFirm = entegratorFirm;
-
-        InitializeDefaultHeaders(new Dictionary<string, string>
-        {
-            { "Accept", "application/json" },
-            { "User-Agent", $"{_supplierId} - {_entegratorFirm}" },
-            { "Authorization", $"Basic {Convert.ToBase64String(Encoding.ASCII.GetBytes($"{_apiKey}:{_apiSecret}"))}"}
-        });
-
-        SetSerializerOptions(new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        });
+        IsInProduction = isInProduction;
+        EntegratorFirm = entegratorFirm;
     }
 
-    public string GetBaseUrl() => _isInProduction ? ProdBaseUrl : StageBaseUrl;
+    public string GetBaseUrl() => IsInProduction
+        ? "https://apigw.trendyol.com/integration/"
+        : "https://stageapigw.trendyol.com/integration/";
+
+    protected override void AddHeaders(HttpClient client)
+    {
+        client.DefaultRequestHeaders.Add("User-Agent", $"{SupplierId} - {EntegratorFirm}");
+    }
 }

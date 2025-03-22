@@ -44,7 +44,7 @@ public class GetShipmentPackagePackageLineResponseModel : IResponseModel
 }
 public class GetShipmentPackageShipmentAddressResponseModel : IResponseModel
 {
-    public long Id { get; set; }
+    public long? Id { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Company { get; set; }
@@ -64,7 +64,7 @@ public class GetShipmentPackageShipmentAddressResponseModel : IResponseModel
 }
 public class GetShipmentPackageInvoiceAddressResponseModel : IResponseModel
 {
-    public long Id { get; set; }
+    public long? Id { get; set; }
     public string FirstName { get; set; }
     public string LastName { get; set; }
     public string Company { get; set; }
@@ -92,13 +92,13 @@ public class GetShipmentPackagesPackageHistoryResponseModel : IResponseModel
 }
 public class GetShipmentPackagePackageResponseModel : IResponseModel
 {
-    public GetShipmentPackageShipmentAddressResponseModel ShipmentAddress { get; set; }
+    public GetShipmentPackageShipmentAddressResponseModel? ShipmentAddress { get; set; }
     public string OrderNumber { get; set; }
     public double GrossAmount { get; set; }
     public double TotalDiscount { get; set; }
     public double TotalTyDiscount { get; set; }
     public object TaxNumber { get; set; }
-    public GetShipmentPackageInvoiceAddressResponseModel InvoiceAddress { get; set; }
+    public GetShipmentPackageInvoiceAddressResponseModel? InvoiceAddress { get; set; }
     public string CustomerFirstName { get; set; }
     public string CustomerEmail { get; set; }
     public int CustomerId { get; set; }
@@ -136,4 +136,6 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     public bool DeliveredByService { get; set; }
     public bool Micro { get; set; }
     public bool GiftBoxRequested { get; set; }
+    public int TY_SUPPLIERID { get; set; }
+    public Guid UserId { get; set; } = Guid.Empty;
 }

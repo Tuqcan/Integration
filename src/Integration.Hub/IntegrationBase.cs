@@ -1,90 +1,105 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Net.Http.Headers;
 
 namespace Integration.Hub;
-public class IntegrationBase
+public abstract class IntegrationBase
 {
-    protected static readonly HttpClient _httpClient;
-    protected static JsonSerializerOptions _options = default!;
-    static IntegrationBase()
+    private readonly IHttpClientFactory _httpClientFactory;
+    protected readonly string SupplierId;
+    protected readonly string ApiKey;
+    protected readonly string ApiSecret;
+    protected readonly JsonSerializerOptions _jsonOptions;
+
+    protected IntegrationBase(IHttpClientFactory httpClientFactory, string supplierId, string apiKey, string apiSecret)
     {
-        _httpClient = new HttpClient();
+        _httpClientFactory = httpClientFactory;
+        SupplierId = supplierId;
+        ApiKey = apiKey;
+        ApiSecret = apiSecret;
+        _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true
+        };
     }
 
-    protected void InitializeDefaultHeaders(Dictionary<string, string> headers)
+    protected HttpClient CreateClient()
     {
-        _httpClient.DefaultRequestHeaders.Clear();
-        foreach (var header in headers)
-            _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+        var client = _httpClientFactory.CreateClient("TrendyolApi");
+        var authValue = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{ApiKey}:{ApiSecret}"));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authValue);
+
+        // Ekstra baþlýklarý eklemek için çaðýrýlýr
+        AddHeaders(client);
+
+        return client;
     }
 
-    protected void SetHeader(KeyValuePair<string, string> header)
+    /// <summary>
+    /// Çocuk sýnýflarýn ek baþlýklar ekleyebilmesi için override edilebilir metod.
+    /// </summary>
+    protected virtual void AddHeaders(HttpClient client) { }
+
+    protected async Task<TResponse> GetAsync<TResponse>(string url)
     {
-        _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+        using var client = CreateClient();
+        var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        return await HandleResponse<TResponse>(response);
     }
 
-    protected void SetSerializerOptions(JsonSerializerOptions options)
+    protected async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest request)
     {
-        _options = options;
-    }
-
-    public async Task<TResponse> InvokeRequestAsync<TResponse>(Func<HttpClient, Task<HttpResponseMessage>> httpRequest)
-    where TResponse : IResponseModel
-    {
-        var response = await httpRequest.Invoke(_httpClient);
-        var responseAsString = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-            throw new UnauthorizedAccessException("Trendyol Api Bilgileri hatalý.");
-        var isSuccess = response.IsSuccessStatusCode;
-        if (!isSuccess)
-            throw new Exception(responseAsString);
-
-        return JsonSerializer.Deserialize<TResponse>(responseAsString, _options)!;
-    }
-
-    public async Task<bool> InvokeRequestAsync(Func<HttpClient, Task<HttpResponseMessage>> httpRequest)
-    {
-        var response = await httpRequest.Invoke(_httpClient);
-        var responseAsString = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-            throw new UnauthorizedAccessException("Trendyol Api Bilgileri hatalý.");
-        var isSuccess = response.IsSuccessStatusCode;
-        if (!isSuccess)
-            throw new Exception(responseAsString);
-
-        return isSuccess;
-    }
-
-    public async Task<TResponse> InvokeRequestAsync<TRequest, TResponse>(Func<HttpClient, StringContent?, Task<HttpResponseMessage>> httpRequest, TRequest requestModel)
-    where TResponse : IResponseModel
-    where TRequest : IRequestModel
-    {
-        var jsonData = JsonSerializer.Serialize(requestModel, _options);
+        using var client = CreateClient();
+        var jsonData = JsonSerializer.Serialize(request, _jsonOptions);
         var requestBody = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-        var response = await httpRequest.Invoke(_httpClient, requestBody);
-        var responseAsString = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-            throw new UnauthorizedAccessException("Trendyol Api Bilgileri hatalý.");
-        var isSuccess = response.IsSuccessStatusCode;
-        if (!isSuccess)
-            throw new Exception(responseAsString);
-        return JsonSerializer.Deserialize<TResponse>(responseAsString, _options)!;
+        var response = await client.PostAsync(url, requestBody);
+        return await HandleResponse<TResponse>(response);
     }
-    public async Task<bool> InvokeRequestAsync<TRequest>(Func<HttpClient, StringContent?, Task<HttpResponseMessage>> httpRequest, TRequest requestModel)
-    where TRequest : IRequestModel
+
+    protected async Task<TResponse> PutAsync<TRequest, TResponse>(string url, TRequest request)
     {
-        var jsonData = JsonSerializer.Serialize(requestModel, _options);
+        using var client = CreateClient();
+        var jsonData = JsonSerializer.Serialize(request, _jsonOptions);
         var requestBody = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-        var response = await httpRequest.Invoke(_httpClient, requestBody);
-        var responseAsString = await response.Content.ReadAsStringAsync();
-        var isSuccess = response.IsSuccessStatusCode;
-        if (response.StatusCode == HttpStatusCode.Unauthorized)
-            throw new UnauthorizedAccessException("Trendyol Api Bilgileri hatalý.");
-        if (!isSuccess)
-            throw new Exception(responseAsString);
-        return isSuccess;
+        var response = await client.PutAsync(url, requestBody);
+        return await HandleResponse<TResponse>(response);
+    }
+
+    protected async Task<bool> DeleteAsync(string url)
+    {
+        using var client = CreateClient();
+        var response = await client.DeleteAsync(url);
+        return response.IsSuccessStatusCode;
+    }
+
+    private async Task<TResponse> HandleResponse<TResponse>(HttpResponseMessage response)
+    {
+        try
+        {
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new UnauthorizedAccessException("Trendyol API bilgileri hatalý.");
+
+            response.EnsureSuccessStatusCode();
+
+            await using var responseStream = await response.Content.ReadAsStreamAsync(); // **STREAM ÝLE OKUMA**
+            return await JsonSerializer.DeserializeAsync<TResponse>(responseStream, _jsonOptions)
+                   ?? throw new JsonException("JSON dönüþümü baþarýsýz.");
+        }
+        catch (OutOfMemoryException ex)
+        {
+            throw new OutOfMemoryException("Bellek aþýmý oluþtu! JSON verisi çok büyük olabilir.", ex);
+        }
+        catch (JsonException ex)
+        {
+            throw new JsonException("JSON dönüþüm hatasý: Geçersiz format!", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Ýstek iþlenirken hata oluþtu: {ex.Message}", ex);
+        }
     }
 }
