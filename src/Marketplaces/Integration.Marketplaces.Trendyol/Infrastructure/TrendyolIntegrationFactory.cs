@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Integration.Marketplaces.Trendyol.Infrastructure.OrderIntegration;
 using Integration.Marketplaces.Trendyol.Infrastructure.ClaimIntegration;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration;
+using Integration.Marketplaces.Trendyol.Infrastructure.InvoiceIntegration;
 
 namespace Integration.Marketplaces.Trendyol.Infrastructure;
 
@@ -32,6 +33,12 @@ public class TrendyolIntegrationFactory
         if (typeof(T) == typeof(ITrendyolClaimIntegration))
         {
             return new TrendyolClaimIntegration(_httpClientFactory, supplierId, apiKey, apiSecret, isInProduction, entegratorFirm) as T
+                ?? throw new InvalidOperationException("Failed to create TrendyolClaimIntegration");
+        }
+
+        if (typeof(T) == typeof(ITrendyolInvoiceIntegration))
+        {
+            return new TrendyolInvoiceIntegration(_httpClientFactory, supplierId, apiKey, apiSecret, isInProduction, entegratorFirm) as T
                 ?? throw new InvalidOperationException("Failed to create TrendyolClaimIntegration");
         }
 

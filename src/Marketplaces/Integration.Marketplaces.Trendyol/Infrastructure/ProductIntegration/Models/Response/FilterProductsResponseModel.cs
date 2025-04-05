@@ -11,47 +11,63 @@ public class FilterProductResponseModel : IResponseModel
     public string Id { get; set; }
     public bool Approved { get; set; }
     public bool Archived { get; set; }
-    public int ProductCode { get; set; }
-    public string BatchRequestId { get; set; }
+    
     public int SupplierId { get; set; }
+
     public long CreateDateTime { get; set; }
     public long LastUpdateDate { get; set; }
-    public string Gender { get; set; }
+
     public string Brand { get; set; }
-    public string Barcode { get; set; }
+    public int BrandId { get; set; }
+
     public string Title { get; set; }
-    public string CategoryName { get; set; }
-    public string ProductMainId { get; set; }
     public string Description { get; set; }
+
+    public string CategoryName { get; set; }
+    public int PimCategoryId { get; set; }
+
+    public string ProductMainId { get; set; }
+
+    public int? ProductContentId { get; set; }
+    public int? ProductCode { get; set; }
+
+    public string Barcode { get; set; }
+    public string? StockCode { get; set; }
     public string StockUnitType { get; set; }
     public int Quantity { get; set; }
-    public double ListPrice { get; set; }
-    public double SalePrice { get; set; }
+
+    public decimal ListPrice { get; set; }
+    public decimal SalePrice { get; set; }
+
     public int VatRate { get; set; }
-    public double DimensionalWeight { get; set; }
-    public string StockCode { get; set; }
-    public FilterProductDeliveryOptionResponseModel DeliveryOption { get; set; }
-    public List<FilterProductImageResponseModel> Images { get; set; }
-    public List<FilterProductAttributeResponseModel> Attributes { get; set; }
+    public decimal DimensionalWeight { get; set; }
+
     public string PlatformListingId { get; set; }
-    public string StockId { get; set; }
+    public string? ProductUrl { get; set; }
+
     public bool HasActiveCampaign { get; set; }
+    public bool Onsale { get; set; } // camelCase geliyor!
+
     public bool Locked { get; set; }
-    public int ProductContentId { get; set; }
-    public int PimCategoryId { get; set; }
-    public int BrandId { get; set; }
-    public int Version { get; set; }
-    public string Color { get; set; }
-    public string Size { get; set; }
-    public bool LockedByUnSuppliedReason { get; set; }
-    public bool Onsale { get; set; }
+    public bool Rejected { get; set; }
+    public bool Blacklisted { get; set; }
+
+    public int DeliveryDuration { get; set; }
+
+    public List<FilterProductImageResponseModel> Images { get; set; } = [];
+    public List<FilterProductAttributeResponseModel> Attributes { get; set; } = [];
+
+
+
+    public Guid UserId { get; set; }
+    public int TY_SUPPLIERID { get; set; }
 }
 
-public class FilterProductDeliveryOptionResponseModel : IResponseModel
-{
-    public int DeliveryDuration { get; set; }
-    public string FastDeliveryType { get; set; }// TODO: Check
-}
+//public class FilterProductDeliveryOptionResponseModel : IResponseModel
+//{
+//    public int DeliveryDuration { get; set; }
+//    public string FastDeliveryType { get; set; }// TODO: Check
+//}
 
 public class FilterProductImageResponseModel : IResponseModel
 {

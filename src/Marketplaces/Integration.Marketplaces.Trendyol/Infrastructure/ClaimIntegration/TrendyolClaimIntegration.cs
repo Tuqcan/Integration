@@ -10,8 +10,17 @@ public class TrendyolClaimIntegration : TrendyolIntegrationBase, ITrendyolClaimI
 
     public async Task<GetClaimsResponseModel?> GetClaimsAsync(string filterQuery)
     {
-        string url = $"{GetBaseUrl()}suppliers/{SupplierId}/claims" + (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
-        return await GetAsync<GetClaimsResponseModel>(url);
+        // string url = $"{GetBaseUrl()}suppliers/{SupplierId}/claims" + (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
+
+        string url = $"{GetBaseUrl()}order/sellers/{SupplierId}/claims"+
+             (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
+        var response = await GetAsync<GetClaimsResponseModel>(url);
+        foreach (var item in response?.Content ?? new List<GetClaimResponseModel>())
+        {
+            item.TY_SUPPLIERID = Convert.ToInt32(SupplierId);
+        }
+
+        return response;
     }
 
     public async Task<bool> CreateClaimAsync(CreateClaimRequestModel createClaimRequestModel)

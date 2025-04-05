@@ -1,4 +1,5 @@
 ﻿using Integration.Hub;
+using Integration.Marketplaces.Trendyol.Infrastructure.ClaimIntegration.Models.Response;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration.Constants;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration.Models.Request;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration.Models.Response;
@@ -89,6 +90,12 @@ public class TrendyolProductIntegration : TrendyolIntegrationBase, ITrendyolProd
     public async Task<FilterProductsResponseModel?> FilterProductsAsync(string filterQuery)
     {
         string url = GetFilterProductsUrl() + (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
-        return await GetAsync<FilterProductsResponseModel>(url);
+
+        var response = await GetAsync<FilterProductsResponseModel>(url);
+        foreach (var item in response?.Content ?? new List<FilterProductResponseModel>())
+        {
+            item.TY_SUPPLIERID = Convert.ToInt32(SupplierId);
+        }
+        return response;
     }
 }
