@@ -59,7 +59,6 @@ public class FilterProductResponseModel : IResponseModel
 
 
 
-    public Guid UserId { get; set; }
     public int TY_SUPPLIERID { get; set; }
 }
 

@@ -24,9 +24,9 @@ public class UpdateProductRequestModel : IRequestModel
 
     public string CurrencyType { get; set; }
 
-    public double ListPrice { get; set; }
+    public decimal ListPrice { get; set; }
 
-    public double SalePrice { get; set; }
+    public decimal SalePrice { get; set; }
 
     public int VatRate { get; set; }
 

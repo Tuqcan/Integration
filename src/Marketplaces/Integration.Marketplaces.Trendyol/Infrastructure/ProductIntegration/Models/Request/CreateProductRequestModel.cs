@@ -24,9 +24,9 @@ public class CreateProductRequestModel : IRequestModel
 
     public string CurrencyType { get; set; }
 
-    public double ListPrice { get; set; }
+    public decimal ListPrice { get; set; }
 
-    public double SalePrice { get; set; }
+    public decimal SalePrice { get; set; }
 
     public int VatRate { get; set; }
 
@@ -44,7 +44,7 @@ public class CreateProductRequestModel : IRequestModel
 
     public List<CreateProductCategoryAttributeRequestModel> Attributes { get; set; }
 
-    public CreateProductRequestModel(string barcode, string title, string productMainId, int brandId, int categoryId, int quantity, string stockCode, int dimensionalWeight, string description, string currencyType, double listPrice, double salePrice, int vatRate, int cargoCompanyId, int? shipmentAddressId, int? returningAddressId, int? deliveryDuration)
+    public CreateProductRequestModel(string barcode, string title, string productMainId, int brandId, int categoryId, int quantity, string stockCode, int dimensionalWeight, string description, string currencyType, decimal listPrice, decimal salePrice, int vatRate, int cargoCompanyId, int? shipmentAddressId, int? returningAddressId, int? deliveryDuration)
     {
         Barcode = barcode;
         Title = title;

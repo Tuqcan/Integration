@@ -19,9 +19,9 @@ var clientFactory = scope.ServiceProvider.GetRequiredService<IHttpClientFactory>
 //CLAIM
 var trendyolClaimIntegration = new TrendyolClaimIntegration(
         httpClientFactory: clientFactory,
-                supplierId: "193500",
-            apiKey: "1pQRqfqycYJYy3duv1xn",
-            apiSecret: "g8Sodg5HVhPRsOS8NVkD",
+                supplierId: "",
+            apiKey: "",
+            apiSecret: "",
             isInProduction: true,
             entegratorFirm: "entegratorFirm");
 

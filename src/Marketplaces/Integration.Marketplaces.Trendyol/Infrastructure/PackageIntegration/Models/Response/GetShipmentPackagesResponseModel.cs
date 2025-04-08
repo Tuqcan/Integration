@@ -14,9 +14,9 @@ public class GetShipmentPackagePackageFastDeliveryOptionResponseModel : IRespons
 }
 public class GetShipmentPackagePackageDiscountDetailResponseModel : IResponseModel
 {
-    public double LineItemPrice { get; set; }
-    public double LineItemDiscount { get; set; }
-    public double LineItemTyDiscount { get; set; }
+    public decimal LineItemPrice { get; set; }
+    public decimal LineItemDiscount { get; set; }
+    public decimal LineItemTyDiscount { get; set; }
 }
 public class GetShipmentPackagePackageLineResponseModel : IResponseModel
 {
@@ -28,9 +28,9 @@ public class GetShipmentPackagePackageLineResponseModel : IResponseModel
     public int ProductCode { get; set; }
     public string ProductOrigin { get; set; }
     public int MerchantId { get; set; }
-    public double Amount { get; set; }
-    public double Discount { get; set; }
-    public double TyDiscount { get; set; }
+    public decimal Amount { get; set; }
+    public decimal Discount { get; set; }
+    public decimal TyDiscount { get; set; }
     public List<GetShipmentPackagePackageDiscountDetailResponseModel> DiscountDetails { get; set; }
     public List<GetShipmentPackagePackageFastDeliveryOptionResponseModel> FastDeliveryOptions { get; set; }
     public string CurrencyCode { get; set; }
@@ -40,7 +40,7 @@ public class GetShipmentPackagePackageLineResponseModel : IResponseModel
     public decimal VatBaseAmount { get; set; }
     public string Barcode { get; set; }
     public string OrderLineItemStatusName { get; set; }
-    public double Price { get; set; }
+    public decimal Price { get; set; }
 }
 public class GetShipmentPackageShipmentAddressResponseModel : IResponseModel
 {
@@ -94,9 +94,9 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
 {
     public GetShipmentPackageShipmentAddressResponseModel? ShipmentAddress { get; set; }
     public string OrderNumber { get; set; }
-    public double GrossAmount { get; set; }
-    public double TotalDiscount { get; set; }
-    public double TotalTyDiscount { get; set; }
+    public decimal GrossAmount { get; set; }
+    public decimal TotalDiscount { get; set; }
+    public decimal TotalTyDiscount { get; set; }
     public object TaxNumber { get; set; }
     public GetShipmentPackageInvoiceAddressResponseModel? InvoiceAddress { get; set; }
     public string CustomerFirstName { get; set; }
@@ -120,7 +120,7 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     public string ScheduledDeliveryStoreId { get; set; }
     public long EstimatedDeliveryStartDate { get; set; }
     public long EstimatedDeliveryEndDate { get; set; }
-    public double TotalPrice { get; set; }
+    public decimal TotalPrice { get; set; }
     public string DeliveryAddressType { get; set; }
     public long AgreedDeliveryDate { get; set; }
     public bool AgreedDeliveryDateExtendible { get; set; }
@@ -129,13 +129,14 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     public long AgreedDeliveryExtensionEndDate { get; set; }
     public string InvoiceLink { get; set; }
     public bool FastDelivery { get; set; }
-    public string FastDeliveryType { get; set; }
+    public string? FastDeliveryType { get; set; }
     public long OriginShipmentDate { get; set; }
     public long LastModifiedDate { get; set; }
     public bool Commercial { get; set; }
     public bool DeliveredByService { get; set; }
     public bool Micro { get; set; }
+    public string? EtgbNo { get; set; }
+    public long? EtgbDate { get; set; }
     public bool GiftBoxRequested { get; set; }
     public int TY_SUPPLIERID { get; set; }
-    public Guid UserId { get; set; } = Guid.Empty;
 }

@@ -95,7 +95,7 @@ public abstract class IntegrationBase
         }
         catch (JsonException ex)
         {
-            throw new JsonException("JSON dönüþüm hatasý: Geçersiz format!", ex);
+            throw new JsonException("JSON hatasý: Geçersiz format!", ex);
         }
         catch (Exception ex)
         {
