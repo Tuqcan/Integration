@@ -99,10 +99,10 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     public decimal TotalTyDiscount { get; set; }
     public object TaxNumber { get; set; }
     public GetShipmentPackageInvoiceAddressResponseModel? InvoiceAddress { get; set; }
-    public string CustomerFirstName { get; set; }
+    public string? CustomerFirstName { get; set; }
     public string CustomerEmail { get; set; }
     public int CustomerId { get; set; }
-    public string CustomerLastName { get; set; }
+    public string? CustomerLastName { get; set; }
     public long Id { get; set; }
     public long CargoTrackingNumber { get; set; }
     public string CargoTrackingLink { get; set; }

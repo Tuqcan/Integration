@@ -45,7 +45,7 @@ public class GetClaimRejectedPackageInfoResponseModel : IResponseModel
     public string? CargoProviderName { get; set; }
     public string? CargoTrackingLink { get; set; }
     public string? CargoSenderNumber { get; set; }
-    public int Packageid { get; set; }
+    public long Packageid { get; set; }
     public List<string> Items { get; set; }
 }
 
