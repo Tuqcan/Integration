@@ -4,6 +4,7 @@ using Integration.Marketplaces.Trendyol.Infrastructure.ClaimIntegration;
 using Integration.Marketplaces.Trendyol.Infrastructure.OrderIntegration;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 
 namespace Integration.Marketplaces.Trendyol
 {
@@ -15,6 +16,12 @@ namespace Integration.Marketplaces.Trendyol
             services.AddHttpClient("TrendyolApi", client =>
             {
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+                client.Timeout = TimeSpan.FromSeconds(60); // İstek zaman aşımı süresi
+            })
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                UseCookies = true,
+                CookieContainer = new CookieContainer()
             });
 
             //services.AddScoped<ITrendyolPackageIntegration, TrendyolPackageIntegration>();

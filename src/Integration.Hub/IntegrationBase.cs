@@ -83,7 +83,17 @@ public abstract class IntegrationBase
             if (response.StatusCode == HttpStatusCode.Unauthorized)
                 throw new UnauthorizedAccessException("Trendyol API bilgileri hatalý.");
 
-            response.EnsureSuccessStatusCode();
+
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                throw new Exception(
+                    $"API isteði baþarýsýz oldu. StatusCode: {(int)response.StatusCode} - {response.StatusCode}. " +
+                    $"Response: {errorContent}");
+            }
+
+            //response.EnsureSuccessStatusCode();
 
             await using var responseStream = await response.Content.ReadAsStreamAsync(); // **STREAM ÝLE OKUMA**
             return await JsonSerializer.DeserializeAsync<TResponse>(responseStream, _jsonOptions)

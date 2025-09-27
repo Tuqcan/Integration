@@ -52,7 +52,7 @@ public class FilterProductResponseModel : IResponseModel
     public bool Rejected { get; set; }
     public bool Blacklisted { get; set; }
 
-    public int DeliveryDuration { get; set; }
+    public int? DeliveryDuration { get; set; }
 
     public List<FilterProductImageResponseModel> Images { get; set; } = [];
     public List<FilterProductAttributeResponseModel> Attributes { get; set; } = [];
