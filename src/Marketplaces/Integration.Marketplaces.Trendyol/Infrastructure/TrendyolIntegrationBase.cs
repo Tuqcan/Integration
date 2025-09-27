@@ -20,6 +20,6 @@ public abstract class TrendyolIntegrationBase : IntegrationBase
 
     protected override void AddHeaders(HttpClient client)
     {
-        client.DefaultRequestHeaders.Add("User-Agent", $"{SupplierId} - {EntegratorFirm}");
+        client.DefaultRequestHeaders.Add("User-Agent", $"{EntegratorFirm}-{SupplierId}");
     }
 }
