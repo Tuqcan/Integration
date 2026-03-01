@@ -15,10 +15,10 @@ public class EnumTransactionTypeConverter : JsonConverter<EnumTransactionType>
     { "Kupon İptal", EnumTransactionType.CouponCancel },
     { "Provizyon +", EnumTransactionType.ProvisionPositive },
     { "Provizyon -", EnumTransactionType.ProvisionNegative },
-    { "Kurumsal Fatura - Trendyol Promosyon", EnumTransactionType.TyDiscount },
-    { "Kurumsal Fatura - Trendyol Promosyon İptali", EnumTransactionType.TyDiscountCancel },
-    { "Kurumsal Fatura - Trendyol Kupon", EnumTransactionType.TyCoupon },
-    { "Kurumsal Fatura - Trendyol Kupon İptali", EnumTransactionType.TyCouponCancel },
+    { "Kurumsal Fatura - Trendyol Promosyon", EnumTransactionType.TYDiscount },
+    { "Kurumsal Fatura - Trendyol Promosyon İptali", EnumTransactionType.TYDiscountCancel },
+    { "Kurumsal Fatura - Trendyol Kupon", EnumTransactionType.TYCoupon },
+    { "Kurumsal Fatura - Trendyol Kupon İptali", EnumTransactionType.TYCouponCancel },
     { "Kısmi İade", EnumTransactionType.ManualRefund },
     { "Kısmi İade İptal", EnumTransactionType.ManualRefundCancel },
     { "Kargo Ücreti", EnumTransactionType.DeliveryFee },
@@ -30,9 +30,9 @@ public class EnumTransactionTypeConverter : JsonConverter<EnumTransactionType>
     { "Hakediş Pozitif İptal", EnumTransactionType.SellerRevenuePositiveCancel },
     { "Hakediş Negatif İptal", EnumTransactionType.SellerRevenueNegativeCancel },
     { "Komisyon Pozitif İptal", EnumTransactionType.CommissionPositiveCancel },
-    { "Komisyon Negatif İptal", EnumTransactionType.CommissionNegativeCancel }
-        
-
+    { "Komisyon Negatif İptal", EnumTransactionType.CommissionNegativeCancel },
+    { "Link ile Ödeme", EnumTransactionType.PayByLink },
+    { "PayByLink", EnumTransactionType.PayByLink }
 };
 
     public override EnumTransactionType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -42,7 +42,10 @@ public class EnumTransactionTypeConverter : JsonConverter<EnumTransactionType>
         if (_map.TryGetValue(value ?? "", out var result))
             return result;
 
-        throw new JsonException($"Geçersiz transactionType: {value}");
+        if (Enum.TryParse<EnumTransactionType>(value, true, out var parsed))
+            return parsed;
+
+        return EnumTransactionType.Unknown;
     }
 
     public override void Write(Utf8JsonWriter writer, EnumTransactionType value, JsonSerializerOptions options)

@@ -7,17 +7,9 @@ public static class Providers
     {
         return new List<GetProviderResponseModel>
         {
-            new GetProviderResponseModel(41, "DHLMP", "DHL Marketplace", "951-241-77-13"),
-            new GetProviderResponseModel(38, "SENDEOMP", "Sendeo Marketplace", "2910804196"),
-            new GetProviderResponseModel(36, "NETMP", "NetKargo Lojistik Marketplace", "6930094440"),
-            new GetProviderResponseModel(34, "MARSMP", "Mars Lojistik Marketplace", "6120538808"),
-            new GetProviderResponseModel(39, "BIRGUNDEMP", "Bir Günde Kargo Marketplace", "1770545653"),
-            new GetProviderResponseModel(35, "OCTOMP", "Octovan Lojistik Marketplace", "6330506845"),
-            new GetProviderResponseModel(30, "BORMP", "Borusan Lojistik Marketplace", "1800038254"),
-            new GetProviderResponseModel(12, "UPSMP", "UPS Kargo Marketplace", "9170014856"),
-            new GetProviderResponseModel(13, "AGTMP", "AGT Marketplace", "6090414309"),
-            new GetProviderResponseModel(14, "CAIMP", "Cainiao Marketplace", "0"),
-            new GetProviderResponseModel(10, "MNGMP", "MNG Kargo Marketplace", "6080712084"),
+            new GetProviderResponseModel(38, "SENDEOMP", "Kolay Gelsin Marketplace", "2910804196"),
+            new GetProviderResponseModel(30, "CEVATEDARIK", "Ceva Tedarik Marketplace", "1800038254"),
+            new GetProviderResponseModel(10, "DHLECOMMP", "DHL eCommerce Marketplace", "6080712084"),
             new GetProviderResponseModel(19, "PTTMP", "PTT Kargo Marketplace", "7320068060"),
             new GetProviderResponseModel(9, "SURATMP", "Sürat Kargo Marketplace", "7870233582"),
             new GetProviderResponseModel(17, "TEXMP", "Trendyol Express Marketplace", "8590921777"),
@@ -28,7 +20,7 @@ public static class Providers
         };
     }
 
-    public static GetProviderResponseModel GetProviderById(int id) => GetProviders().First(x => x.Id == id);
-    public static GetProviderResponseModel GetProviderByCode(string code) => GetProviders().First(x => x.Code == code);
-    public static GetProviderResponseModel GetProviderByName(string name) => GetProviders().First(x => x.Name == name);
+    public static GetProviderResponseModel? GetProviderById(int id) => GetProviders().FirstOrDefault(x => x.Id == id);
+    public static GetProviderResponseModel? GetProviderByCode(string code) => GetProviders().FirstOrDefault(x => x.Code == code);
+    public static GetProviderResponseModel? GetProviderByName(string name) => GetProviders().FirstOrDefault(x => x.Name == name);
 }

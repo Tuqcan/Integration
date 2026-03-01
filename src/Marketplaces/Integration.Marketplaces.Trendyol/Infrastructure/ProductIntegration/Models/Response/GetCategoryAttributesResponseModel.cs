@@ -13,13 +13,19 @@ public class GetCategoryAttributesResponseModel : IResponseModel
 public class CategoryAttributeResponseModel : IResponseModel
 {
     public int CategoryId { get; set; }
-    public int Id { get; set; }
-    public string Name { get; set; }
+    public CategoryAttributeInfoModel Attribute { get; set; }
     public bool Required { get; set; }
     public bool AllowCustom { get; set; }
     public bool Varianter { get; set; }
     public bool Slicer { get; set; }
+    public bool AllowMultipleAttributeValues { get; set; }
     public List<CategoryAttributeValueResponseModel> AttributeValues { get; set; }
+}
+
+public class CategoryAttributeInfoModel
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
 }
 
 public class CategoryAttributeValueResponseModel : IResponseModel

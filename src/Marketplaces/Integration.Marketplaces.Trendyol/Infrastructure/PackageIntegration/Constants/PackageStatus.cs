@@ -15,5 +15,6 @@ public enum PackageStatus
     Repack,
     UnPacked,
     UnSupplied,
-    Verified
+    Verified,
+    Reset
 }

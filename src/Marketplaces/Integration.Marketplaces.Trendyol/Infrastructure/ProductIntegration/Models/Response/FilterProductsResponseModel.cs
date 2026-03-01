@@ -57,16 +57,8 @@ public class FilterProductResponseModel : IResponseModel
     public List<FilterProductImageResponseModel> Images { get; set; } = [];
     public List<FilterProductAttributeResponseModel> Attributes { get; set; } = [];
 
-
-
     public int TY_SUPPLIERID { get; set; }
 }
-
-//public class FilterProductDeliveryOptionResponseModel : IResponseModel
-//{
-//    public int DeliveryDuration { get; set; }
-//    public string FastDeliveryType { get; set; }// TODO: Check
-//}
 
 public class FilterProductImageResponseModel : IResponseModel
 {

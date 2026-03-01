@@ -26,8 +26,8 @@ public class ShipmentFilterBuilder : IFilterBuilder
 
     public ShipmentFilterBuilder AddSize(int size)
     {
-        if (size > 10000)
-            throw new Exception("Page size must be less than or equal to 10000");
+        if (size > 200)
+            throw new Exception("Page size must be less than or equal to 200");
         _parameters["size"] = size.ToString();
         return this;
     }

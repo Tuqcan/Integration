@@ -25,7 +25,7 @@ public class GetShipmentPackagePackageLineResponseModel : IResponseModel
     public string ProductSize { get; set; }
     public string MerchantSku { get; set; }
     public string ProductName { get; set; }
-    public int ProductCode { get; set; }
+    public long ProductCode { get; set; }
     public string ProductOrigin { get; set; }
     public int MerchantId { get; set; }
     public decimal Amount { get; set; }
@@ -41,6 +41,7 @@ public class GetShipmentPackagePackageLineResponseModel : IResponseModel
     public string Barcode { get; set; }
     public string OrderLineItemStatusName { get; set; }
     public decimal Price { get; set; }
+    public decimal? Commission { get; set; }
 }
 public class GetShipmentPackageShipmentAddressResponseModel : IResponseModel
 {
@@ -101,7 +102,7 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     public GetShipmentPackageInvoiceAddressResponseModel? InvoiceAddress { get; set; }
     public string? CustomerFirstName { get; set; }
     public string CustomerEmail { get; set; }
-    public int CustomerId { get; set; }
+    public long CustomerId { get; set; }
     public string? CustomerLastName { get; set; }
     public long Id { get; set; }
     public long CargoTrackingNumber { get; set; }
@@ -138,5 +139,8 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     public string? EtgbNo { get; set; }
     public long? EtgbDate { get; set; }
     public bool GiftBoxRequested { get; set; }
+    [JsonPropertyName("3pByTrendyol")]
+    public bool? Is3pByTrendyol { get; set; }
+    public bool ContainsDangerousProduct { get; set; }
     public int TY_SUPPLIERID { get; set; }
 }

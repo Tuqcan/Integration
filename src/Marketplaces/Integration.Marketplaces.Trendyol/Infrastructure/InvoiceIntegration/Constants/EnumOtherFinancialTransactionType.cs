@@ -2,6 +2,7 @@
 
 public enum EnumOtherFinancialTransactionType
 {
+    Unknown = 0,                      // Bilinmeyen islem tipi - converter fallback
     CashAdvance = 1,                  // Vadesi gelmemiş hakediş için erken ödeme
     WireTransfer = 2,                 // Trendyol ile satıcı arasında virman işlemi
     IncomingTransfer = 3,            // Tedarikçiden Trendyol’a yapılan ödeme

@@ -16,7 +16,24 @@ public class EnumOtherFinancialTransactionTypeConverter : JsonConverter<EnumOthe
     { "Ödeme", EnumOtherFinancialTransactionType.PaymentOrder },
     { "Fatura", EnumOtherFinancialTransactionType.DeductionInvoices },
     { "Finansal Kalem", EnumOtherFinancialTransactionType.FinancialItem },
-    { "Stopaj", EnumOtherFinancialTransactionType.Stoppage }
+    { "Stopaj", EnumOtherFinancialTransactionType.Stoppage },
+    { "E-ticaret Stopajı", EnumOtherFinancialTransactionType.Stoppage },
+    { "Tahsilat Fişi", EnumOtherFinancialTransactionType.PaymentOrder },
+    { "Kusurlu Ürün Faturası", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "Komisyon Faturası", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "Kargo Fatura", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "Platform Hizmet Bedeli", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "Tedarik Edememe", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "Termin Gecikme Bedeli", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "Eksik Ürün Faturası", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "Yanlış Ürün Faturası", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "Reklam Bedeli", EnumOtherFinancialTransactionType.DeductionInvoices },
+    { "AZ-Uluslararası Hizmet Bedeli", EnumOtherFinancialTransactionType.FinancialItem },
+    { "AZ-Platform Hizmet Bedeli", EnumOtherFinancialTransactionType.FinancialItem },
+    { "AZ-Gecikme Cezası", EnumOtherFinancialTransactionType.FinancialItem },
+    { "AZ-Yurtdışı Operasyon Bedeli", EnumOtherFinancialTransactionType.FinancialItem },
+    { "Yurtdışı Operasyon Iade Bedeli", EnumOtherFinancialTransactionType.FinancialItem },
+    { "Uluslararası Hizmet Bedeli", EnumOtherFinancialTransactionType.FinancialItem }
 };
 
     public override EnumOtherFinancialTransactionType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -26,7 +43,7 @@ public class EnumOtherFinancialTransactionTypeConverter : JsonConverter<EnumOthe
         if (_map.TryGetValue(value ?? "", out var result))
             return result;
 
-        throw new JsonException($"Geçersiz otherFinancial transactionType: {value}");
+        return EnumOtherFinancialTransactionType.Unknown;
     }
 
     public override void Write(Utf8JsonWriter writer, EnumOtherFinancialTransactionType value, JsonSerializerOptions options)

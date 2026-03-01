@@ -27,9 +27,18 @@ public class InvoiceFilterBuilder : IFilterBuilder
 
     public InvoiceFilterBuilder AddTransactionType(EnumTransactionType transactionType)
     {
-        _filterQuery.Append($"transactionType={transactionType.ToString()}&");
+        _filterQuery.Append($"transactionType={GetApiName(transactionType)}&");
         return this;
     }
+
+    private static string GetApiName(EnumTransactionType type) => type switch
+    {
+        EnumTransactionType.TYDiscount => "TyDiscount",
+        EnumTransactionType.TYDiscountCancel => "TyDiscountCancel",
+        EnumTransactionType.TYCoupon => "TyCoupon",
+        EnumTransactionType.TYCouponCancel => "TyCouponCancel",
+        _ => type.ToString()
+    };
     public InvoiceFilterBuilder AddTransactionOtherType(EnumOtherFinancialTransactionType transactionType)
     {
         _filterQuery.Append($"transactionType={transactionType.ToString()}&");
