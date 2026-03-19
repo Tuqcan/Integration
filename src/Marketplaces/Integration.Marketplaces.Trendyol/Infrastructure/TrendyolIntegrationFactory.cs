@@ -5,6 +5,7 @@ using Integration.Marketplaces.Trendyol.Infrastructure.OrderIntegration;
 using Integration.Marketplaces.Trendyol.Infrastructure.ClaimIntegration;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration;
 using Integration.Marketplaces.Trendyol.Infrastructure.InvoiceIntegration;
+using Integration.Marketplaces.Trendyol.Infrastructure.QnAIntegration;
 
 namespace Integration.Marketplaces.Trendyol.Infrastructure;
 
@@ -43,6 +44,12 @@ public class TrendyolIntegrationFactory
         {
             return new TrendyolInvoiceIntegration(_httpClientFactory, supplierId, apiKey, apiSecret, isInProduction, entegratorFirm, _rateLimiter) as T
                 ?? throw new InvalidOperationException("Failed to create TrendyolInvoiceIntegration");
+        }
+
+        if (typeof(T) == typeof(ITrendyolQnAIntegration))
+        {
+            return new TrendyolQnAIntegration(_httpClientFactory, supplierId, apiKey, apiSecret, isInProduction, entegratorFirm, _rateLimiter) as T
+                ?? throw new InvalidOperationException("Failed to create TrendyolQnAIntegration");
         }
 
         throw new NotImplementedException($"Integration type {typeof(T).Name} is not supported.");

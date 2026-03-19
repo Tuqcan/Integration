@@ -32,5 +32,9 @@ public static class TrendyolRateLimitConfig
         // Muhasebe ve Finans Servisleri
         [TrendyolRateLimitCategories.InvoiceSettlements]  = new(100, TimeSpan.FromMinutes(1)),
         [TrendyolRateLimitCategories.InvoiceCargo]        = new(100, TimeSpan.FromMinutes(1)),
+
+        // QnA (Müşteri Soruları) Servisleri
+        [TrendyolRateLimitCategories.QnAFilter]           = new(1000, TimeSpan.FromMinutes(1)),
+        [TrendyolRateLimitCategories.QnAAnswer]           = new(100, TimeSpan.FromMinutes(1)),
     };
 }

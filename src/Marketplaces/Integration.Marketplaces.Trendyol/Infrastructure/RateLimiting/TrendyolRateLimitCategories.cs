@@ -28,4 +28,8 @@ public static class TrendyolRateLimitCategories
     // Muhasebe ve Finans Servisleri
     public const string InvoiceSettlements = "InvoiceSettlements";     // 100/min
     public const string InvoiceCargo = "InvoiceCargo";                 // 100/min
+
+    // QnA (Müşteri Soruları) Servisleri
+    public const string QnAFilter = "QnAFilter";                      // 1000/min
+    public const string QnAAnswer = "QnAAnswer";                      // 100/min
 }
