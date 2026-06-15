@@ -19,7 +19,8 @@ public static class TrendyolRateLimitConfig
         [TrendyolRateLimitCategories.CategoryAttributes]  = new(50, TimeSpan.FromMinutes(1)),
 
         // Siparis Servisleri (Limit 50000 tier)
-        [TrendyolRateLimitCategories.ShipmentPackages]    = new(2000, TimeSpan.FromMinutes(1)),
+        // ShipmentPackages: 8 Haziran 2026'dan itibaren yeni limit (50000 tier) -> 30/min (eski 2000/min)
+        [TrendyolRateLimitCategories.ShipmentPackages]    = new(30, TimeSpan.FromMinutes(1)),
         [TrendyolRateLimitCategories.TrackingNumber]      = new(300, TimeSpan.FromMinutes(1)),
         [TrendyolRateLimitCategories.PackageStatus]       = new(300, TimeSpan.FromMinutes(1)),
         [TrendyolRateLimitCategories.SplitPackages]       = new(100, TimeSpan.FromMinutes(1)),
@@ -35,6 +36,6 @@ public static class TrendyolRateLimitConfig
 
         // QnA (Müşteri Soruları) Servisleri
         [TrendyolRateLimitCategories.QnAFilter]           = new(1000, TimeSpan.FromMinutes(1)),
-        [TrendyolRateLimitCategories.QnAAnswer]           = new(100, TimeSpan.FromMinutes(1)),
+        [TrendyolRateLimitCategories.QnAAnswer]           = new(500, TimeSpan.FromMinutes(1)),
     };
 }

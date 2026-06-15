@@ -15,7 +15,7 @@ public static class TrendyolRateLimitCategories
     public const string CategoryAttributes = "CategoryAttributes";     // 50/min
 
     // Siparis Servisleri (Limit 50000 tier)
-    public const string ShipmentPackages = "ShipmentPackages";         // 2000/min
+    public const string ShipmentPackages = "ShipmentPackages";         // 30/min (8 Haz 2026, 50000 tier)
     public const string TrackingNumber = "TrackingNumber";             // 300/min
     public const string PackageStatus = "PackageStatus";               // 300/min
     public const string SplitPackages = "SplitPackages";               // 100/min
@@ -31,5 +31,5 @@ public static class TrendyolRateLimitCategories
 
     // QnA (Müşteri Soruları) Servisleri
     public const string QnAFilter = "QnAFilter";                      // 1000/min
-    public const string QnAAnswer = "QnAAnswer";                      // 100/min
+    public const string QnAAnswer = "QnAAnswer";                      // 500/min
 }
