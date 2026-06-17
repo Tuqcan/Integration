@@ -1,6 +1,7 @@
 ﻿using Integration.Hub;
 using Integration.Marketplaces.Trendyol.Infrastructure.ClaimIntegration.Models.Response;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration.Constants;
+using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration.Helpers;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration.Models.Request;
 using Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration.Models.Response;
 using Integration.Marketplaces.Trendyol.Infrastructure.RateLimiting;
@@ -26,6 +27,8 @@ public class TrendyolProductIntegration : TrendyolIntegrationBase, ITrendyolProd
     private string GetDeleteProductUrl() => $"{GetBaseUrl()}suppliers/{SupplierId}/v2/products";
     private string GetBatchRequestResultUrl(string batchRequestId) => $"{GetBaseUrl()}suppliers/{SupplierId}/products/batch-requests/{batchRequestId}";
     private string GetFilterProductsUrl() => $"{GetBaseUrl()}product/sellers/{SupplierId}/products";
+    private string GetFilterApprovedProductsUrl() => $"{GetBaseUrl()}product/sellers/{SupplierId}/products/approved";
+    private string GetFilterUnapprovedProductsUrl() => $"{GetBaseUrl()}product/sellers/{SupplierId}/products/unapproved";
 
     // ✅ Tedarikçi Adreslerini Getir
     public async Task<GetSuppliersAddressesResponseModel?> GetSuppliersAddressesAsync()
@@ -87,7 +90,7 @@ public class TrendyolProductIntegration : TrendyolIntegrationBase, ITrendyolProd
         return await GetAsync<GetBatchRequestResultResponseModel>(GetBatchRequestResultUrl(batchRequestId), TrendyolRateLimitCategories.BatchCheck);
     }
 
-    // ✅ Ürünleri Filtreleyerek Getir
+    // ✅ Ürünleri Filtreleyerek Getir (V1 - LEGACY, Trendyol Ağustos'ta kapatıyor)
     public async Task<FilterProductsResponseModel?> FilterProductsAsync(string filterQuery)
     {
         string url = GetFilterProductsUrl() + (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
@@ -98,5 +101,47 @@ public class TrendyolProductIntegration : TrendyolIntegrationBase, ITrendyolProd
             item.TY_SUPPLIERID = Convert.ToInt32(SupplierId);
         }
         return response;
+    }
+
+    // ✅ Onaylı Ürünleri Getir (V2). Nested V2 response flat modele düzleştirilir; bus/consumer değişmez.
+    public async Task<FilterProductsResponseModel?> FilterApprovedProductsAsync(string filterQuery)
+    {
+        string url = GetFilterApprovedProductsUrl() + (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
+
+        var v2 = await GetAsync<ApprovedProductsV2Response>(url, TrendyolRateLimitCategories.ProductFilter);
+        var flat = ProductV2FlattenMapper.FlattenApproved(v2);
+        foreach (var item in flat)
+            item.TY_SUPPLIERID = Convert.ToInt32(SupplierId);
+
+        return new FilterProductsResponseModel
+        {
+            Content = flat,
+            TotalElements = v2?.TotalElements ?? 0,
+            TotalPages = v2?.TotalPages ?? 0,
+            Page = v2?.Page ?? 0,
+            Size = v2?.Size ?? 0,
+            NextPageToken = v2?.NextPageToken
+        };
+    }
+
+    // ✅ Onaysız Ürünleri Getir (V2 - pending/rejected). Flat modele düzleştirilir.
+    public async Task<FilterProductsResponseModel?> FilterUnapprovedProductsAsync(string filterQuery)
+    {
+        string url = GetFilterUnapprovedProductsUrl() + (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
+
+        var v2 = await GetAsync<UnapprovedProductsV2Response>(url, TrendyolRateLimitCategories.ProductFilter);
+        var flat = ProductV2FlattenMapper.FlattenUnapproved(v2);
+        foreach (var item in flat)
+            item.TY_SUPPLIERID = Convert.ToInt32(SupplierId);
+
+        return new FilterProductsResponseModel
+        {
+            Content = flat,
+            TotalElements = v2?.TotalElements ?? 0,
+            TotalPages = v2?.TotalPages ?? 0,
+            Page = v2?.Page ?? 0,
+            Size = v2?.Size ?? 0,
+            NextPageToken = v2?.NextPageToken
+        };
     }
 }

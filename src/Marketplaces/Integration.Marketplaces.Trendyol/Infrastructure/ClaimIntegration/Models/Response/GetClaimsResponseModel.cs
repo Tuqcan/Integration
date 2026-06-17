@@ -1,4 +1,6 @@
+using System.Text.Json.Serialization;
 using Integration.Hub;
+using Integration.Marketplaces.Trendyol.Infrastructure.ClaimIntegration.JsonConverter;
 namespace Integration.Marketplaces.Trendyol.Infrastructure.ClaimIntegration.Models.Response;
 public class GetClaimsResponseModel : PaginationModel
 {
@@ -13,6 +15,7 @@ public class GetClaimResponseModel : IResponseModel
     public string CustomerFirstName { get; set; }
     public string CustomerLastName { get; set; }
     public long ClaimDate { get; set; }
+    [JsonConverter(typeof(TolerantLongNullableConverter))]
     public long? CargoTrackingNumber { get; set; }
     public string? CargoTrackingLink { get; set; }
     public string? CargoSenderNumber { get; set; }
@@ -31,6 +34,7 @@ public class GetClaimResponseModel : IResponseModel
 
 public class GetClaimReplacementOutboundPackageInfoResponseModel : IResponseModel
 {
+    [JsonConverter(typeof(TolerantLongNullableConverter))]
     public long? CargoTrackingNumber { get; set; }
     public string? CargoProviderName { get; set; }
     public string? CargoSenderNumber { get; set; }
@@ -41,6 +45,7 @@ public class GetClaimReplacementOutboundPackageInfoResponseModel : IResponseMode
 
 public class GetClaimRejectedPackageInfoResponseModel : IResponseModel
 {
+    [JsonConverter(typeof(TolerantLongNullableConverter))]
     public long? CargoTrackingNumber { get; set; }
     public string? CargoProviderName { get; set; }
     public string? CargoTrackingLink { get; set; }

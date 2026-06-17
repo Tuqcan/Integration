@@ -129,8 +129,20 @@ public interface ITrendyolProductIntegration
     
     /// <summary>
     /// Bu servis ile Trendyol mağazanızdaki ürünlerinizi listeleyebilirsiniz.
+    /// LEGACY (V1) — Trendyol Ağustos'ta kapatıyor. Yerine FilterApprovedProductsAsync + FilterUnapprovedProductsAsync.
     /// </summary>
     /// <param name="filterQuery"></param>
-    /// <returns><see cref="bool"/></returns>
     public Task<FilterProductsResponseModel?> FilterProductsAsync(string filterQuery);
+
+    /// <summary>
+    /// V2 onaylı ürün filtreleme (.../products/approved). Nested response flat FilterProductsResponseModel'e
+    /// düzleştirilir; NextPageToken ile token-based sayfalama yapılır.
+    /// </summary>
+    public Task<FilterProductsResponseModel?> FilterApprovedProductsAsync(string filterQuery);
+
+    /// <summary>
+    /// V2 onaysız ürün filtreleme (.../products/unapproved — pending/rejected). Flat modele düzleştirilir;
+    /// NextPageToken ile token-based sayfalama yapılır.
+    /// </summary>
+    public Task<FilterProductsResponseModel?> FilterUnapprovedProductsAsync(string filterQuery);
 }

@@ -143,4 +143,8 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     public bool? Is3pByTrendyol { get; set; }
     public bool ContainsDangerousProduct { get; set; }
     public int TY_SUPPLIERID { get; set; }
+
+    // Senkronu tetikleyen kullanicinin UserId'si. Publisher (PackagePublish) damgalar.
+    // Consumer cost/komisyonu bu kullaniciya gore ceker (cok-kullanicili magaza icin).
+    public Guid UserId { get; set; }
 }

@@ -4,6 +4,10 @@ namespace Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration.Mo
 public class FilterProductsResponseModel : PaginationModel, IResponseModel
 {
     public List<FilterProductResponseModel> Content { get; set; }
+
+    // V2 token-based sayfalama. Fetch orkestrasyonunda kullanilir; publish edilen
+    // chunk mesajlarinda null'dir (consumer kullanmaz).
+    public string? NextPageToken { get; set; }
 }
 
 public class FilterProductResponseModel : IResponseModel
@@ -28,8 +32,9 @@ public class FilterProductResponseModel : IResponseModel
 
     public string ProductMainId { get; set; }
 
-    public int? ProductContentId { get; set; }
-    public int? ProductCode { get; set; }
+    // Trendyol contentId/variantId long (2.147 milyar int sinirini asabilir) -> long? tutulur.
+    public long? ProductContentId { get; set; }
+    public long? ProductCode { get; set; }
 
     public string Barcode { get; set; }
     public string? StockCode { get; set; }
