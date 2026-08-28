@@ -356,8 +356,14 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
     // BUNLARA [JsonPropertyName] EKLEME. Adlarini MassTransit'in adlandirma politikasi
     // belirliyor; attribute eklemek TEL FORMATINI DEGISTIRIR ve TY_SUPPLIERID'yi 0'a
     // dusurur -> tum paketler "supplier 0" altinda gruplanir, YANLIS maliyet/komisyon
-    // cekilir. Yanitta gelen "supplierId" alani DAIMA 0'dir (olculdu) ve kullanilamaz;
-    // bu yuzden TY_SUPPLIERID kodda elle atanir.
+    // cekilir.
+    //
+    // ⛔ YANITTAKI "supplierId" ALANI MODELLENMEDI - BILINCLI (Faz 4.3).
+    // Trendyol o alani DAIMA 0 gonderiyor (28.08.2026, 1.322 pakette istisnasiz).
+    // Modellenseydi birisi "hazir geliyormus" diye kullanir ve tum paketleri
+    // supplier 0'a yazardi. Yaniltici bir alani DOGRU tutmaktansa HIC bulundurmamak
+    // yegdir. Magaza kimligi asagidaki TY_SUPPLIERID'den gelir; onu
+    // TrendyolPackageIntegration istegi kuran anahtardan ELLE atar - dogru davranis.
 
     public int TY_SUPPLIERID { get; set; }
 

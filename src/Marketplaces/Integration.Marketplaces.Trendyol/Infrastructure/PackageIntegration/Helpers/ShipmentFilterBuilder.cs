@@ -93,8 +93,20 @@ public class ShipmentFilterBuilder : IFilterBuilder
         return this;
     }
 
+    /// <summary>
+    /// Statu filtresi ekler.
+    ///
+    /// PackageStatus enum'u API'nin SORGUDA kabul ettigi kumeden GENIS; gecersiz bir
+    /// deger HTTP 200 + 0 kayit dondurur (sessiz bos sonuc). Bu yuzden deger ISTEK
+    /// KURULMADAN dogrulaniyor - bkz. <see cref="TrendyolOrderQueryStatuses"/>.
+    ///
+    /// Publisher bugun status KULLANMIYOR (tum statuleri cekiyor); bu koruma ileriye
+    /// donuktur: "yalniz Created cekelim, daha hizli olur" diyen bir degisiklik yanlis
+    /// enum degeriyle SESSIZCE HICBIR SEY cekmezdi.
+    /// </summary>
     public ShipmentFilterBuilder AddStatus(PackageStatus status)
     {
+        TrendyolOrderQueryStatuses.Validate(status, nameof(status));
         _parameters["status"] = status.ToString();
         return this;
     }
