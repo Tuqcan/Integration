@@ -10,9 +10,25 @@ public class TrendyolPackageIntegration : TrendyolIntegrationBase, ITrendyolPack
     public TrendyolPackageIntegration(IHttpClientFactory httpClientFactory, string supplierId, string apiKey, string apiSecret, bool isInProduction, string entegratorFirm, IRateLimiter? rateLimiter = null)
         : base(httpClientFactory, supplierId, apiKey, apiSecret, isInProduction, entegratorFirm, rateLimiter) { }
 
+    /// <summary>
+    /// Siparis paketlerini ceker.
+    ///
+    /// ############ V1 -> V2 (Faz 3, 28.08.2026) ############
+    /// Eski uc: order/sellers/{id}/orders     -> 15.10.2026'da KAPANIYOR.
+    /// Yeni uc: order/sellers/{id}/v2/orders
+    ///
+    /// Canli olcum: V1 ile V2 govdesi BIREBIR AYNI (7.781 byte, content JSON esit).
+    /// Fark ZARF'ta degil, SINIRLARDA:
+    ///   * V2'de page * size &lt;= 10.000 SERT SINIRI var (asilirsa HTTP 400).
+    ///     V1'de bu sinir YOKTU ve bugun HyperCep 10 gunluk pencerede tavanin
+    ///     %90'inda. Sayfa dongusunu kesme + pencereyi bolme mantigi
+    ///     PackageIntegration.Publisher/Worker.cs icinde (Faz 3.2 / 3.3).
+    ///   * 14 gunden genis pencere SESSIZCE kirpiliyor - bkz. ShipmentFilterBuilder.
+    /// ######################################################
+    /// </summary>
     public async Task<GetShipmentPackagesResponseModel?> GetShipmentPackagesAsync(string filterQuery)
     {
-        string url = $"{GetBaseUrl()}order/sellers/{SupplierId}/orders" +
+        string url = $"{GetBaseUrl()}order/sellers/{SupplierId}/v2/orders" +
                      (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
 
         var response = await GetAsync<GetShipmentPackagesResponseModel>(url, TrendyolRateLimitCategories.ShipmentPackages);
