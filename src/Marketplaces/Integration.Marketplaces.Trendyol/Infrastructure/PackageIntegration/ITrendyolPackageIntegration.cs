@@ -16,6 +16,19 @@ public interface ITrendyolPackageIntegration
     Task<GetShipmentPackagesResponseModel?> GetShipmentPackagesAsync(string filterQuery);
 
     /// <summary>
+    /// Siparis paketlerini AKIS (cursor) ile ceker - TAM TARAMA / GERI DOLUM icin.
+    ///
+    /// v2/orders'tan farki:
+    ///   * page * size &lt;= 10.000 SAYFA TAVANI YOK (10.000'in tek KALICI cozumu)
+    ///   * 14 gun sessiz kirpmasi olcumde GORULMEDI
+    /// Veri kapsami AYNI (~3 ay) - stream kapsami GENISLETMEZ.
+    ///
+    /// Filtre ShipmentStreamFilterBuilder ile kurulur; ShipmentFilterBuilder
+    /// KULLANILMAZ (parametre adlari farkli ve yanlis ad SESSIZCE yok sayiliyor).
+    /// </summary>
+    Task<GetShipmentPackagesStreamResponseModel?> GetShipmentPackagesStreamAsync(string filterQuery);
+
+    /// <summary>
     /// Bu method herhangi bir paket için çağırıldığında, artık 
     /// Trendyol’un anlaşması üzerinden olan paket değil, tedarikçinin 
     /// kendi anlaşması üzerinden yaptığı gönderinin durumu sorgulanmaya 

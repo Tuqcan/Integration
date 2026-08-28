@@ -198,6 +198,12 @@ public static class TrendyolRateLimitConfig
             // Bu bes kova ONCEDEN her tier'de sabitti; resmi tablo tier'e bagli oldugunu
             // soyluyor. Bkz. ShipmentPackagesLimit / PackageNotifyLimit / SplitAndBoxInfoLimit.
             [TrendyolRateLimitCategories.ShipmentPackages]    = new(ShipmentPackagesLimit(tier), minute),
+
+            // orders/stream: TIER'DEN BAGIMSIZ, sabit 12/dk = tam olarak 5 saniyede bir.
+            // Trendyol dokumani "onerilen kullanim minimum 5 saniye araliklarda istek
+            // atilmasidir" diyor ve resmi limit tablosunda stream icin AYRI BIR SATIR YOK.
+            // Tier'e baglamak, belgelenmemis bir sayiyi uydurmak olurdu.
+            [TrendyolRateLimitCategories.ShipmentPackagesStream] = new(12, minute),
             [TrendyolRateLimitCategories.TrackingNumber]      = new(PackageNotifyLimit(tier), minute),
 
             // NOT: PackageStatus kovasinda fatura linki uclari da var (SendInvoiceLinkAsync,

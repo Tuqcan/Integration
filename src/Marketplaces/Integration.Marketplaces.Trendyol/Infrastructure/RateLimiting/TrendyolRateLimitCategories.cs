@@ -78,6 +78,25 @@ public static class TrendyolRateLimitCategories
 
     // Siparis Servisleri (Limit 50000 tier)
     public const string ShipmentPackages = "ShipmentPackages";         // 30/min (8 Haz 2026, 50000 tier)
+
+    /// <summary>
+    /// orders/stream kovasi. <see cref="ShipmentPackages"/> ile PAYLASILMAZ.
+    ///
+    /// ############ NEDEN AYRI KOVA ############
+    /// (a) Resmi limit tablosunda stream'in AYRI BIR SATIRI YOK - yani hangi kovadan
+    ///     harcandigi BELIRSIZ. Ayri kova, bu belirsizligi ShipmentPackages'a bulastirmaz.
+    /// (b) Trendyol dokumani "onerilen kullanim minimum 5 saniye araliklarda istek
+    ///     atilmasidir" diyor -> 12/dk. ShipmentPackages ise tier'e gore 30-100/dk.
+    ///     Ayni kovaya konsalardi ya stream cok hizli akar (oneriye aykiri) ya da
+    ///     artimli senkron 12/dk'ya MAHKUM olurdu - siparis gecikmesi artardi.
+    ///
+    /// OLCUM: 1 saniye aralikla 10 ardisik istek -> 10/10 HTTP 200, tek 429 YOK.
+    /// Yani oneri BUGUN ZORLANMIYOR. Yine de uyuluyor: oneri bir gun kurala donerse
+    /// AKIS ORTASINDA kesilmek en pahali senaryodur.
+    /// #########################################
+    /// </summary>
+    public const string ShipmentPackagesStream = "ShipmentPackagesStream";   // 12/min (5 sn)
+
     public const string TrackingNumber = "TrackingNumber";             // 300/min
     public const string PackageStatus = "PackageStatus";               // 300/min
     public const string SplitPackages = "SplitPackages";               // 100/min

@@ -40,6 +40,34 @@ public class TrendyolPackageIntegration : TrendyolIntegrationBase, ITrendyolPack
         return response;
     }
 
+    /// <summary>
+    /// Siparis paketlerini AKIS (cursor) ile ceker - TAM TARAMA / GERI DOLUM icin.
+    ///
+    /// v2/orders'tan farki: 10.000 sayfa tavani YOK, 14 gun kirpmasi YOK.
+    /// Veri kapsami AYNI (~3 ay) - stream kapsami GENISLETMEZ (olculdu: 90 gun -> veri,
+    /// 100 gun -> 0; v2/orders ile birebir ayni pencere).
+    ///
+    /// KENDI KOVASINDAN harcar (ShipmentPackagesStream, 12/dk = 5 sn) - artimli
+    /// senkronun kovasini yavaslatmasin diye.
+    /// </summary>
+    public async Task<GetShipmentPackagesStreamResponseModel?> GetShipmentPackagesStreamAsync(string filterQuery)
+    {
+        string url = $"{GetBaseUrl()}order/sellers/{SupplierId}/orders/stream" +
+                     (string.IsNullOrWhiteSpace(filterQuery) ? "" : "?" + filterQuery);
+
+        var response = await GetAsync<GetShipmentPackagesStreamResponseModel>(
+            url, TrendyolRateLimitCategories.ShipmentPackagesStream);
+
+        // v2/orders yolundaki ile AYNI damga: yanittaki supplierId DAIMA 0 (Faz 4.3),
+        // magaza kimligi istegi kuran anahtardan gelir.
+        foreach (var item in response?.Content ?? new List<GetShipmentPackagePackageResponseModel>())
+        {
+            item.TY_SUPPLIERID = Convert.ToInt32(SupplierId);
+        }
+
+        return response;
+    }
+
     public async Task<bool> UpdateTrackingNumberAsync(long shipmentPackageId, UpdateTrackingNumberRequestModel updateTrackingNumberRequestModel)
     {
         return await PutAsync<UpdateTrackingNumberRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/{shipmentPackageId}/update-tracking-number", updateTrackingNumberRequestModel, TrendyolRateLimitCategories.TrackingNumber);
