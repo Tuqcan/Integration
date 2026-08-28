@@ -111,8 +111,18 @@ public class TrendyolProductIntegration : TrendyolIntegrationBase, ITrendyolProd
     }
 
     /// <summary>
-    /// Deger ucu icin varsayilan sayfa boyutu. Canli olculen en buyuk deger kumesi
-    /// 2.140 (attribute 292); 3000 onu TEK sayfada getiriyor.
+    /// Deger ucu icin varsayilan sayfa boyutu.
+    ///
+    /// DUZELTME (28.08.2026): burada "canli olculen en buyuk deger kumesi 2.140
+    /// (attribute 292)" yaziyordu — o olcum yalnizca bir kac ozelligi ornekliyordu.
+    /// Deger tasiyan 965 ozelligin TAMAMI tarandi:
+    ///     attribute 344 "Yazar" -> 156.200 deger = 53 sayfa
+    ///     ikinci en buyuk       ->   2.140 deger =  1 sayfa
+    /// Yani 2.140 gercekten IKINCI en buyuktu; birincisi 73 kat buyuk.
+    ///
+    /// 3000, ozelliklerin 964/965'ini TEK sayfada getiriyor. Daha buyuk bir varsayilan
+    /// yalnizca "Yazar" icin fark yaratir ve o kume zaten sayfalanmak zorunda; sayfa
+    /// dongusunun kacak tavani CategoriesWorker.MaxAttributeValuePages'te.
     /// </summary>
     public const int DefaultValuePageSize = 3000;
 

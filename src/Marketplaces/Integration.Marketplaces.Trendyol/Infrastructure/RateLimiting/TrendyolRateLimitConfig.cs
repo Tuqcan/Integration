@@ -75,12 +75,32 @@ public static class TrendyolRateLimitConfig
             // Saticiya ozgu degil, kimlik bilgisi bile istemiyorlar -> hicbir saticinin
             // kotasindan harcamazlar (bkz. TrendyolRateLimitCategories.CatalogRead).
             //
-            // 600/dk NEDEN: canli olcumde ~400 istek/dk'da 429 GORULMEDI, ama "429
-            // gormedik" != "limit yok". Tavan iki isi birden yapiyor: (1) bir hata
-            // dongusunun Trendyol'u doverek IP/hesap seviyesinde yaptirim cekmesini
-            // onler, (2) tur suresini ongorulebilir kilar. ~3.400 katalog istegi bu
-            // tavanda ~6 dakikada biter ve SATICI KOTASINA DOKUNMAZ.
-            [TrendyolRateLimitCategories.CatalogRead]         = new(600, minute),
+            // ############ 600 IDI, 1200'E CIKARILDI (28.08.2026) ############
+            // Eski gerekce: "canli olcumde ~400 istek/dk'da 429 gorulmedi". Dogru ama
+            // O OLCUM SIRADAN (tek akisli) kodun ulasabildigi hizdi - yani limit degil,
+            // KENDI YAVASLIGIMIZ olculmustu.
+            //
+            // Katalog tazelemesi (kategori, ozellik) CIFTI bazina gecince ~25.300 istek
+            // gerekiyor; 600/dk = 10/sn bunu 42 dakikaya cikarir ve eszamanliligi bogar.
+            //
+            // Gercek tolerans olculdu (gercek cift ornekleriyle, 120 istekli turlar):
+            //     eszaman= 1 ->   7,2 istek/sn   429=0  5xx=0
+            //     eszaman= 8 ->  34,9 istek/sn   429=0  5xx=0
+            //     eszaman=16 ->  47,0 istek/sn   429=0  5xx=0
+            //     eszaman=32 -> 131,6 istek/sn   429=0  5xx=0
+            //
+            // 1200/dk = 20/sn secildi: olculen en dusuk temiz seviyenin (35/sn) ALTINDA.
+            // Olcum benim makinemden ve PATLAMA seklinde yapildi; sunucudan SUREKLI
+            // 25.000 istekte ucun davranisi ayni olmayabilir, o yuzden yarisindan az.
+            //
+            // Tavan iki isi birden yapiyor: (1) bir hata dongusunun Trendyol'u doverek
+            // IP/hesap seviyesinde yaptirim cekmesini onler, (2) tur suresini
+            // ongorulebilir kilar. SATICI KOTASINA DOKUNMAZ.
+            //
+            // 429 gorulurse ILK azaltilacak deger burasidir (ve CategoriesWorker
+            // .MaxConcurrentFetches).
+            // ###############################################################
+            [TrendyolRateLimitCategories.CatalogRead]         = new(1200, minute),
 
             // Urun grubunda DEGIL; kendi sert limiti var.
             [TrendyolRateLimitCategories.SupplierAddresses]   = new(1, TimeSpan.FromHours(1)),
