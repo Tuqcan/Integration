@@ -53,11 +53,100 @@ public static class TrendyolRateLimitConfig
         _ => 350    // T50K
     };
 
+    // ########################################################################
+    // SIPARIS KOVALARI DA TIER'E BAGLI (28.08.2026 duzeltmesi)
+    //
+    // URUN gecis planinin Faz 2'si "siparis kovalari tier'den etkilenmez" diyordu
+    // ve bu konfig o varsayimla yazilmisti (her tier'de sabit 30/dk). RESMI TABLO
+    // bunu YALANLIYOR: developers.trendyol.com/docs/1-servis-limitleri
+    // "Get Shipment Packages" satiri 30 / 40 / 50 / 100 / 100 diyor.
+    //
+    // Pratik etkisi: HyperCep (193500) 53.818 listelemeyle T50K'da OLAMAZ; kod onu
+    // 30/dk sayarken hakki 40/dk. Faz 3 tarih pencerelerini daraltip istek sayisini
+    // artiracagi icin bu fark onemli hale geliyor.
+    // ########################################################################
+
+    /// <summary>
+    /// "Limitsiz" tier'ler icin pratik tavan.
+    ///
+    /// NEDEN int.MaxValue DEGIL: Lua betigi INCR + karsilastirma yapiyor.
+    /// 100.000/dk pratikte limitsizdir ve bir hata dongusu durumunda Trendyol'u
+    /// kontrolsuzce dovmek yerine bir tavan birakir (IP/hesap yaptirimi riski).
+    /// </summary>
+    private const int PracticallyUnlimited = 100_000;
+
+    /// <summary>Resmi tablo: "Get Shipment Packages" -> 30 / 40 / 50 / 100 / 100.</summary>
+    private static int ShipmentPackagesLimit(TrendyolRateLimitTier tier) => tier switch
+    {
+        TrendyolRateLimitTier.T75K => 40,
+        TrendyolRateLimitTier.T150K => 50,
+        TrendyolRateLimitTier.T500K => 100,
+        TrendyolRateLimitTier.Unlimited => 100,
+        _ => 30     // T50K
+    };
+
+    /// <summary>
+    /// Resmi tablo satirlari: "Kargo Takip Kodu Bildirme" ve "Paket Statu Bildirimi".
+    /// Ikisi de 300 / 300 / 500 / limitsiz / limitsiz -> tek fonksiyondan beslenirler.
+    /// </summary>
+    private static int PackageNotifyLimit(TrendyolRateLimitTier tier) => tier switch
+    {
+        TrendyolRateLimitTier.T150K => 500,
+        TrendyolRateLimitTier.T500K => PracticallyUnlimited,
+        TrendyolRateLimitTier.Unlimited => PracticallyUnlimited,
+        _ => 300    // T50K, T75K
+    };
+
+    /// <summary>
+    /// Resmi tablo satirlari: "Siparis Paketlerini Bolme" (/split, /multi-split,
+    /// /quantity-split, /split-packages - dordu de ayni) VE "Desi ve Koli Bilgisi
+    /// Bildirimi". Hepsi 100 / 100 / 200 / limitsiz / limitsiz.
+    ///
+    /// SplitPackages ve BoxInfo ayni fonksiyondan besleniyor cunku degerleri
+    /// TESADUFEN degil, resmi tabloda GERCEKTEN esit.
+    /// </summary>
+    private static int SplitAndBoxInfoLimit(TrendyolRateLimitTier tier) => tier switch
+    {
+        TrendyolRateLimitTier.T150K => 200,
+        TrendyolRateLimitTier.T500K => PracticallyUnlimited,
+        TrendyolRateLimitTier.Unlimited => PracticallyUnlimited,
+        _ => 100    // T50K, T75K
+    };
+
+    /// <summary>
+    /// Tier = saticinin LISTELEME KOTASI; kota adlari dogrudan tier adlaridir
+    /// (Limit 50000, Limit 75000, ...). Urun sayisi bir tier'e SIGMIYORSA satici
+    /// o tier'de OLAMAZ -> buradan bir ALT SINIR cikarilir.
+    ///
+    /// YALNIZ ALT SINIR: satici daha genis bir kota satin almis olabilir, bunu
+    /// bilemeyiz. Hatanin maliyeti ASIMETRIK oldugu icin bilerek dar tarafta kaliyoruz:
+    ///   dar tahmin   -> yalnizca YAVASLIK (geri donusu var)
+    ///   genis tahmin -> 429 seli (geri donusu yok)
+    ///
+    /// 28.08.2026 canli olcumu: 193500 -> 53.750 + 68 = 53.818 -> T75K (30 yerine 40/dk).
+    /// Diger uc magaza 50.000'in altinda -> T50K.
+    ///
+    /// DIKKAT: bu bir CIKARIM, olcum degildir. Canlida 429 gorulurse tahmin yuksek
+    /// demektir; o magaza icin en dar tier'e dusulur (bkz. RedisRateLimiter downgrade).
+    /// </summary>
+    public static TrendyolRateLimitTier InferTier(int listingCount) => listingCount switch
+    {
+        > 500_000 => TrendyolRateLimitTier.Unlimited,
+        > 150_000 => TrendyolRateLimitTier.T500K,
+        > 75_000 => TrendyolRateLimitTier.T150K,
+        > 50_000 => TrendyolRateLimitTier.T75K,
+        _ => TrendyolRateLimitTier.T50K,     // varsayilan: EN DAR
+    };
+
     /// <summary>
     /// Verilen tier icin tam kural tablosunu uretir.
     ///
-    /// SIPARIS / IADE / FINANS / QnA kovalari tier'den ETKILENMEZ - yeni rejim
-    /// yalnizca urun servislerini kapsiyor. Onlarin degerleri her tier'de aynidir.
+    /// URUN ve SIPARIS kovalari tier'e BAGLIDIR.
+    /// IADE / FINANS / QnA kovalari tier'den ETKILENMEZ - resmi tabloda onlar tier'siz;
+    /// degerleri her tier'de aynidir.
+    ///
+    /// DUZELTME (28.08.2026): bu ozet eskiden "siparis ... tier'den ETKILENMEZ" diyordu.
+    /// Yanlisti; resmi tablo "Get Shipment Packages" icin 30/40/50/100/100 veriyor.
     /// </summary>
     public static IReadOnlyDictionary<string, RateLimitRule> GetRules(TrendyolRateLimitTier tier)
     {
@@ -105,13 +194,20 @@ public static class TrendyolRateLimitConfig
             // Urun grubunda DEGIL; kendi sert limiti var.
             [TrendyolRateLimitCategories.SupplierAddresses]   = new(1, TimeSpan.FromHours(1)),
 
-            // --- Siparis Servisleri (tier'den bagimsiz) ---
-            // ShipmentPackages: 8 Haziran 2026'dan itibaren yeni limit (50000 tier) -> 30/min (eski 2000/min)
-            [TrendyolRateLimitCategories.ShipmentPackages]    = new(30, minute),
-            [TrendyolRateLimitCategories.TrackingNumber]      = new(300, minute),
-            [TrendyolRateLimitCategories.PackageStatus]       = new(300, minute),
-            [TrendyolRateLimitCategories.SplitPackages]       = new(100, minute),
-            [TrendyolRateLimitCategories.BoxInfo]             = new(100, minute),
+            // --- Siparis Servisleri (TIER'E BAGLI - 28.08.2026 duzeltmesi) ---
+            // Bu bes kova ONCEDEN her tier'de sabitti; resmi tablo tier'e bagli oldugunu
+            // soyluyor. Bkz. ShipmentPackagesLimit / PackageNotifyLimit / SplitAndBoxInfoLimit.
+            [TrendyolRateLimitCategories.ShipmentPackages]    = new(ShipmentPackagesLimit(tier), minute),
+            [TrendyolRateLimitCategories.TrackingNumber]      = new(PackageNotifyLimit(tier), minute),
+
+            // NOT: PackageStatus kovasinda fatura linki uclari da var (SendInvoiceLinkAsync,
+            // DeleteInvoiceLinkAsync). Resmi tabloda FATURA LINKI SATIRI YOK - onlarin bu
+            // kovaya konmasi belgelenmemis bir varsayimdir. Cagiranlari olmadigi icin bugun
+            // etkisiz; bilincli olarak DEGISTIRILMEDI (bkz. Faz 6.5).
+            [TrendyolRateLimitCategories.PackageStatus]       = new(PackageNotifyLimit(tier), minute),
+
+            [TrendyolRateLimitCategories.SplitPackages]       = new(SplitAndBoxInfoLimit(tier), minute),
+            [TrendyolRateLimitCategories.BoxInfo]             = new(SplitAndBoxInfoLimit(tier), minute),
 
             // --- Iade Servisleri (tier'den bagimsiz) ---
             [TrendyolRateLimitCategories.ClaimsList]          = new(1000, minute),

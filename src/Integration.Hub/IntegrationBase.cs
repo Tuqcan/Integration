@@ -117,10 +117,43 @@ public abstract class IntegrationBase
         if (rateLimitCategory is null || _rateLimiter is null)
             return;
 
-        if (int.TryParse(SupplierId, out var supplierId) && supplierId > 0)
+        var supplierId = RateLimitScopeId;
+        if (supplierId > 0)
             await _rateLimiter.WaitAsync(rateLimitCategory, supplierId, ct);
         else
             await _rateLimiter.WaitAsync(rateLimitCategory, ct);
+    }
+
+    /// <summary>
+    /// Rate limit kovasinin kapsam kimligi.
+    ///
+    /// Sayiya cevrilemeyen kimlikte (HB merchant GUID'i, katalog uclarinda bos kimlik)
+    /// 0 doner -> tum 0-kimlikli cagrilar tek GLOBAL kovayi paylasir. Bu dogru davranis:
+    /// o istekler hicbir saticinin kotasindan harcanmaz.
+    /// </summary>
+    private int RateLimitScopeId
+        => int.TryParse(SupplierId, out var id) && id > 0 ? id : 0;
+
+    /// <summary>
+    /// 429 alindiginda rate limiter'a geri bildirim verir (tier cikarimi yuksek olabilir).
+    /// Geri bildirim BEST-EFFORT: burada atilan bir istisna 429 yolunu bozmamali.
+    /// </summary>
+    private async Task ReportRateLimitedAsync(string? rateLimitCategory, CancellationToken ct)
+    {
+        if (rateLimitCategory is null || _rateLimiter is null) return;
+
+        var supplierId = RateLimitScopeId;
+        if (supplierId <= 0) return;   // global kova -> cikarilacak tier yok
+
+        try
+        {
+            await _rateLimiter.ReportRateLimitedAsync(rateLimitCategory, supplierId, ct);
+        }
+        catch (OperationCanceledException) { throw; }
+        catch
+        {
+            // Yutuluyor: geri bildirim bir IYILESTIRMEDIR, istegin kaderini belirlemez.
+        }
     }
 
     /// <summary>
@@ -205,6 +238,11 @@ public abstract class IntegrationBase
 
             if ((int)response.StatusCode == 429)
             {
+                // Tier artik saticinin listeleme kotasindan CIKARILIYOR; 429 o cikarimin
+                // YUKSEK oldugunun tek sinyalidir. Geri bildirilmezse sistem ayni yanlis
+                // limitle dovmeye devam eder.
+                await ReportRateLimitedAsync(rateLimitCategory, ct);
+
                 // Sayac 429'da da ARTAR (eskiden artmiyordu -> sinirsiz dongu).
                 var delay = NextRateLimitDelay(response, url, ++rateLimitRetries);
                 response.Dispose();
