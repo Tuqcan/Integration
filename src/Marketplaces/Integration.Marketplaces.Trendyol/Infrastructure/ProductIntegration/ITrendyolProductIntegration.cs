@@ -7,6 +7,8 @@ namespace Integration.Marketplaces.Trendyol.Infrastructure.ProductIntegration;
 
 public interface ITrendyolProductIntegration
 {
+    [Obsolete("Path V2'ye guncellendi (sellers/{id}/addresses) ama canli dogrulanmadi. " +
+              "Bu uc siparis servis grubuna ait; siparis modulu gecisinde ele alinacak.")]
     public Task<GetSuppliersAddressesResponseModel?> GetSuppliersAddressesAsync();
 
     /// <summary>
@@ -58,6 +60,46 @@ public interface ITrendyolProductIntegration
     public Task<GetCategoryAttributesResponseModel?> GetCategoryAttributes(int categoryId);
 
     /// <summary>
+    /// Bir kategori-ozellik ciftinin SECILEBILIR DEGERLERINI sayfali olarak getirir.<br/>
+    /// <c>GET product/categories/{categoryId}/attributes/{attributeId}/values</c><br/><br/>
+    ///
+    /// V1'de degerler <see cref="GetCategoryAttributes"/> yanitinin icinde
+    /// (<c>categoryAttributes[].attributeValues</c>) gomulu geliyordu. V2 o alani KALDIRDI
+    /// (canli kanit: kategori 766 -> V1 18/18 attribute'ta deger var, V2 0/18).
+    /// Deger senkronu artik ZORUNLU olarak bu uctan yapilir.<br/><br/>
+    ///
+    /// <b>Deger kumesi kategoriden BAGIMSIZDIR</b> (canli dogrulandi: attribute 348 icin
+    /// kategori 766 ve 5511 birebir ayni 26 degeri donuyor). Bu yuzden cagiran taraf
+    /// kategori x attribute fan-out'u yapmak zorunda DEGIL; attribute basina ilk gorulen
+    /// kategori ile tek kez cekmek yeterlidir.<br/><br/>
+    ///
+    /// Sayfalama: yanit <see cref="Integration.Hub.PaginationModel"/> alanlarini tasir
+    /// (<c>totalElements/totalPages/page/size</c>).<br/><br/>
+    ///
+    /// <b>Sayfa boyutu 1000'de SINIRLI DEGIL</b> (28.08.2026 canli olcumu, attribute 292 =
+    /// 2.140 deger): <c>size=1000</c> -> 3 sayfa, <c>size=2000</c> -> 2 sayfa,
+    /// <c>size=3000</c> -> <b>1 sayfa</b>. Varsayilan
+    /// <see cref="TrendyolProductIntegration.DefaultValuePageSize"/>.<br/><br/>
+    ///
+    /// <b>⚠️ ARALIK DISI SAYFA ISTEMEYIN.</b> Canli olcum: <c>page=9999</c> -> HTTP 500,
+    /// <c>page=-1</c> -> HTTP 500. Dongu <c>totalElements</c> ve "sayfa dolu mu" olcutuyle
+    /// durmali, yalnizca <c>totalPages</c>'e guvenmemeli.<br/><br/>
+    ///
+    /// <b>⚠️ GECERSIZ ID SESSIZDIR.</b> Var olmayan attributeId veya categoryId
+    /// <b>HTTP 200 + bos icerik</b> doner (404 DEGIL). Yani "deger yok" ile "boyle bir
+    /// ozellik yok" bu uctan AYIRT EDILEMEZ.
+    /// </summary>
+    /// <param name="categoryId">Ozelligin gorulduğu HERHANGI bir kategori</param>
+    /// <param name="attributeId">Degerleri istenen ozellik</param>
+    /// <param name="page">0 tabanli sayfa numarasi</param>
+    /// <param name="size">Sayfa boyutu (1000 uzeri degerler de onurlandiriliyor)</param>
+    /// <param name="ct">Iptal jetonu</param>
+    /// <returns><see cref="GetCategoryAttributeValuesResponseModel"/></returns>
+    public Task<GetCategoryAttributeValuesResponseModel?> GetCategoryAttributeValuesAsync(
+        int categoryId, int attributeId, int page = 0,
+        int size = TrendyolProductIntegration.DefaultValuePageSize, CancellationToken ct = default);
+
+    /// <summary>
     /// createProduct V2 servisine yapılacak isteklerde gönderilecek sipariş ve 
     /// sevkiyat kargo firma bilgileri ve bu bilgilere ait ID değerleri bu servis 
     /// kullanılarak alınacaktır.
@@ -82,6 +124,8 @@ public interface ITrendyolProductIntegration
     /// </summary>
     /// <param name="products"></param>
     /// <returns><see cref="bool"/></returns>
+    [Obsolete("V2'de 4 uca bolundu: unapproved-bulk-update / content-bulk-update / " +
+              "variant-bulk-update / delivery-info-bulk-update. Bu metot canli dogrulanmadi.")]
     public Task<bool> UpdateProductAsync(BulkModel<UpdateProductRequestModel> products);
 
     /// <summary>
@@ -127,13 +171,6 @@ public interface ITrendyolProductIntegration
     /// <returns><see cref="bool"/></returns>
     public Task<GetBatchRequestResultResponseModel> GetBatchRequestResultAsync(string batchRequestId);
     
-    /// <summary>
-    /// Bu servis ile Trendyol mağazanızdaki ürünlerinizi listeleyebilirsiniz.
-    /// LEGACY (V1) — Trendyol Ağustos'ta kapatıyor. Yerine FilterApprovedProductsAsync + FilterUnapprovedProductsAsync.
-    /// </summary>
-    /// <param name="filterQuery"></param>
-    public Task<FilterProductsResponseModel?> FilterProductsAsync(string filterQuery);
-
     /// <summary>
     /// V2 onaylı ürün filtreleme (.../products/approved). Nested response flat FilterProductsResponseModel'e
     /// düzleştirilir; NextPageToken ile token-based sayfalama yapılır.

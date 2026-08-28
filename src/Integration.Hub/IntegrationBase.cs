@@ -15,6 +15,30 @@ public abstract class IntegrationBase
 
     private const int MaxTransientRetries = 3;
 
+    /// <summary>
+    /// 429 (Too Many Requests) icin azami deneme sayisi.
+    ///
+    /// Eskiden 429 dali "while(true)" icinde SINIRSIZ donuyordu ve
+    /// <see cref="MaxTransientRetries"/> sayaci 429'da ARTMIYORDU: limit kapanmazsa
+    /// worker sonsuza kadar asili kalir, heartbeat "calisiyor" demeye devam ederdi.
+    /// Artik hak bitince <see cref="RateLimitExceededException"/> firlatiliyor.
+    /// </summary>
+    private const int MaxRateLimitRetries = 5;
+
+    /// <summary>
+    /// Tek bir 429 beklemesinin ust siniri.
+    ///
+    /// Retry-After basligi cok buyuk bir deger sallarsa (ya da uc bozuk bir deger
+    /// donerse) tek bir istek saatlerce uyuyabilirdi - kacinmaya calistigimiz
+    /// "sessiz aski" durumunun ta kendisi. Sinir yuzunden erken uyanip yeniden
+    /// 429 alirsak bir deneme hakki harcanir ve en fazla MaxRateLimitRetries
+    /// sonunda YUKSEK SESLE hata aliriz; sessizce asili kalmaktan iyidir.
+    /// </summary>
+    private static readonly TimeSpan MaxRateLimitDelay = TimeSpan.FromMinutes(5);
+
+    /// <summary>Retry-After yoksa ya da anlamsizsa kullanilan varsayilan bekleme.</summary>
+    private static readonly TimeSpan DefaultRateLimitDelay = TimeSpan.FromSeconds(60);
+
     protected IntegrationBase(IHttpClientFactory httpClientFactory, string supplierId, string apiKey, string apiSecret, IRateLimiter? rateLimiter = null)
     {
         _httpClientFactory = httpClientFactory;
@@ -42,172 +66,202 @@ public abstract class IntegrationBase
 
     protected virtual void AddHeaders(HttpClient client) { }
 
+    #region Rate limit
+
+    /// <summary>
+    /// Rate limit kovasini uygular.
+    ///
+    /// ############ KOVA SATICI BAZLI ############
+    /// <see cref="SupplierId"/> pozitif bir sayiysa SATICI BAZLI kova kullanilir
+    /// (<c>...:ratelimit:{kategori}:{supplierId}</c>); aksi halde GLOBAL kova
+    /// (<c>...:ratelimit:{kategori}</c>).
+    ///
+    /// NEDEN: Trendyol'un yayinladigi limitler SATICININ kendi kotasina baglidir -
+    /// "tier" kavraminin tamami saticinin listeleme kotasindan turer
+    /// (T50K/T75K/.../Unlimited). Limit satici bazli oldugu halde kovayi global
+    /// tutmak iki yonlu zarar veriyordu:
+    ///   * N magaza tek kovayi paylasinca her magaza limitin 1/N'ine dusuyordu
+    ///     (kendi kotasini KULLANAMIYORDU) - SaaS'ta magaza sayisi arttikca
+    ///     her magaza lineer olarak yavasliyor.
+    ///   * 500K tier'lik bir satici ile 50K tier'lik bir satici ayni hizda
+    ///     calisiyordu; tier okumanin bir anlami kalmiyordu.
+    ///
+    /// KATALOG UCLARI (kategori agaci, kategori-ozellik, ozellik degerleri, markalar)
+    /// saticiya OZGU DEGILDIR ve zaten kimlik bilgisi olmadan cagriliyor
+    /// (CategoriesWorker supplierId'yi bos geciyor) -> otomatik olarak global kovaya
+    /// duserler. Bu dogru davranis: o istekler hicbir saticinin kotasina yazilamaz.
+    /// ###########################################
+    /// </summary>
+    private async Task ApplyRateLimitAsync(string? rateLimitCategory, CancellationToken ct)
+    {
+        if (rateLimitCategory is null || _rateLimiter is null)
+            return;
+
+        if (int.TryParse(SupplierId, out var supplierId) && supplierId > 0)
+            await _rateLimiter.WaitAsync(rateLimitCategory, supplierId, ct);
+        else
+            await _rateLimiter.WaitAsync(rateLimitCategory, ct);
+    }
+
+    /// <summary>
+    /// 429 sonrasi beklenecek sureyi hesaplar; deneme hakki bittiyse hata firlatir.
+    /// TUM HTTP metotlari bu tek noktadan gecer (kural kopyalarda sapmasin).
+    /// </summary>
+    private static TimeSpan NextRateLimitDelay(HttpResponseMessage response, string url, int attempt)
+    {
+        if (attempt > MaxRateLimitRetries)
+            throw new RateLimitExceededException(url, MaxRateLimitRetries);
+
+        var retryAfter = ReadRetryAfter(response) ?? DefaultRateLimitDelay;
+
+        if (retryAfter > MaxRateLimitDelay) return MaxRateLimitDelay;
+        // Negatif/sifir gelirse hic beklemeden yeniden denemek 429 firtinasi uretir.
+        if (retryAfter < TimeSpan.FromSeconds(1)) return TimeSpan.FromSeconds(1);
+        return retryAfter;
+    }
+
+    /// <summary>
+    /// Retry-After basligi IKI bicimde gelebilir (RFC 9110): saniye cinsinden "delta"
+    /// ya da HTTP-date. Eskiden yalnizca <c>Delta</c> okunuyordu; tarih bicimi gelirse
+    /// null kalip 60 saniyeye dusuyordu - yani pazaryerinin soyledigi sure GOZ ARDI
+    /// ediliyordu. Ikisi de destekleniyor.
+    /// </summary>
+    private static TimeSpan? ReadRetryAfter(HttpResponseMessage response)
+    {
+        var header = response.Headers.RetryAfter;
+        if (header is null) return null;
+        if (header.Delta.HasValue) return header.Delta.Value;
+        if (header.Date.HasValue) return header.Date.Value - DateTimeOffset.UtcNow;
+        return null;
+    }
+
+    #endregion
+
     #region Rate-Limited HTTP Methods
 
-    protected async Task<TResponse> GetAsync<TResponse>(string url, string? rateLimitCategory = null)
+    /// <summary>
+    /// TEK GONDERIM CEKIRDEGI.
+    ///
+    /// Eskiden Get/Post/Put/Delete (+govdeli Delete) metotlarinin her biri ayni retry
+    /// dongusunun KENDI KOPYASINI tasiyordu. Bes kopya bes kez sapabilir: 429 sayacinin
+    /// yalnizca bazi metotlarda artmamasi tam olarak bu yuzden olusmustu. Politika
+    /// (rate limit -> gonder -> soket hatasi retry -> 429 tavani -> gecici durum retry)
+    /// artik TEK yerde.
+    ///
+    /// <paramref name="requestFactory"/> her denemede YENIDEN cagrilir:
+    /// <see cref="HttpRequestMessage"/> tek kullanimliktir, ikinci denemede ayni nesne
+    /// gonderilirse "request already sent" hatasi alinir.
+    /// </summary>
+    private async Task<HttpResponseMessage> SendWithPolicyAsync(
+        Func<HttpRequestMessage> requestFactory,
+        string url,
+        string? rateLimitCategory,
+        CancellationToken ct)
     {
         int transientRetries = 0;
+        int rateLimitRetries = 0;
 
         while (true)
         {
-            if (rateLimitCategory != null && _rateLimiter != null)
-                await _rateLimiter.WaitAsync(rateLimitCategory);
+            ct.ThrowIfCancellationRequested();
+
+            await ApplyRateLimitAsync(rateLimitCategory, ct);
 
             using var client = CreateClient();
+            using var request = requestFactory();
+
             HttpResponseMessage response;
             try
             {
-                response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             }
-            catch (HttpRequestException) when (transientRetries < MaxTransientRetries)
+            catch (HttpRequestException) when (transientRetries < MaxTransientRetries && !ct.IsCancellationRequested)
             {
                 transientRetries++;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)));
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)), ct);
                 continue;
             }
 
-            if (response.StatusCode == (HttpStatusCode)429)
+            if ((int)response.StatusCode == 429)
             {
-                var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(60);
-                await Task.Delay(retryAfter);
+                // Sayac 429'da da ARTAR (eskiden artmiyordu -> sinirsiz dongu).
+                var delay = NextRateLimitDelay(response, url, ++rateLimitRetries);
+                response.Dispose();
+                await Task.Delay(delay, ct);
                 continue;
             }
 
             if (IsTransientError(response.StatusCode) && transientRetries < MaxTransientRetries)
             {
                 transientRetries++;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)));
+                response.Dispose();
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)), ct);
                 continue;
             }
 
-            return await HandleResponse<TResponse>(response);
+            return response;
         }
     }
 
-    protected async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest request, string? rateLimitCategory = null)
+    protected async Task<TResponse> GetAsync<TResponse>(string url, string? rateLimitCategory = null, CancellationToken ct = default)
     {
-        int transientRetries = 0;
+        using var response = await SendWithPolicyAsync(
+            () => new HttpRequestMessage(HttpMethod.Get, url), url, rateLimitCategory, ct);
 
-        while (true)
-        {
-            if (rateLimitCategory != null && _rateLimiter != null)
-                await _rateLimiter.WaitAsync(rateLimitCategory);
-
-            using var client = CreateClient();
-            var jsonData = JsonSerializer.Serialize(request, _jsonOptions);
-            var requestBody = new StringContent(jsonData, Encoding.UTF8, "application/json");
-
-            HttpResponseMessage response;
-            try
-            {
-                response = await client.PostAsync(url, requestBody);
-            }
-            catch (HttpRequestException) when (transientRetries < MaxTransientRetries)
-            {
-                transientRetries++;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)));
-                continue;
-            }
-
-            if (response.StatusCode == (HttpStatusCode)429)
-            {
-                var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(60);
-                await Task.Delay(retryAfter);
-                continue;
-            }
-
-            if (IsTransientError(response.StatusCode) && transientRetries < MaxTransientRetries)
-            {
-                transientRetries++;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)));
-                continue;
-            }
-
-            return await HandleResponse<TResponse>(response);
-        }
+        return await HandleResponse<TResponse>(response, url);
     }
 
-    protected async Task<TResponse> PutAsync<TRequest, TResponse>(string url, TRequest request, string? rateLimitCategory = null)
+    protected async Task<TResponse> PostAsync<TRequest, TResponse>(string url, TRequest request, string? rateLimitCategory = null, CancellationToken ct = default)
     {
-        int transientRetries = 0;
+        using var response = await SendWithPolicyAsync(
+            () => BuildJsonRequest(HttpMethod.Post, url, request), url, rateLimitCategory, ct);
 
-        while (true)
-        {
-            if (rateLimitCategory != null && _rateLimiter != null)
-                await _rateLimiter.WaitAsync(rateLimitCategory);
-
-            using var client = CreateClient();
-            var jsonData = JsonSerializer.Serialize(request, _jsonOptions);
-            var requestBody = new StringContent(jsonData, Encoding.UTF8, "application/json");
-
-            HttpResponseMessage response;
-            try
-            {
-                response = await client.PutAsync(url, requestBody);
-            }
-            catch (HttpRequestException) when (transientRetries < MaxTransientRetries)
-            {
-                transientRetries++;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)));
-                continue;
-            }
-
-            if (response.StatusCode == (HttpStatusCode)429)
-            {
-                var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(60);
-                await Task.Delay(retryAfter);
-                continue;
-            }
-
-            if (IsTransientError(response.StatusCode) && transientRetries < MaxTransientRetries)
-            {
-                transientRetries++;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)));
-                continue;
-            }
-
-            return await HandleResponse<TResponse>(response);
-        }
+        return await HandleResponse<TResponse>(response, url);
     }
 
-    protected async Task<bool> DeleteAsync(string url, string? rateLimitCategory = null)
+    protected async Task<TResponse> PutAsync<TRequest, TResponse>(string url, TRequest request, string? rateLimitCategory = null, CancellationToken ct = default)
     {
-        int transientRetries = 0;
+        using var response = await SendWithPolicyAsync(
+            () => BuildJsonRequest(HttpMethod.Put, url, request), url, rateLimitCategory, ct);
 
-        while (true)
+        return await HandleResponse<TResponse>(response, url);
+    }
+
+    /// <summary>
+    /// Govdesiz DELETE. DIKKAT: bu overload HATA FIRLATMAZ, yalnizca basari bayragi
+    /// doner (tarihsel sozlesme - cagiranlar bool bekliyor).
+    /// </summary>
+    protected async Task<bool> DeleteAsync(string url, string? rateLimitCategory = null, CancellationToken ct = default)
+    {
+        using var response = await SendWithPolicyAsync(
+            () => new HttpRequestMessage(HttpMethod.Delete, url), url, rateLimitCategory, ct);
+
+        return response.IsSuccessStatusCode;
+    }
+
+    /// <summary>
+    /// GOVDELI DELETE.
+    ///
+    /// <see cref="HttpClient.DeleteAsync(string)"/> govde tasiyamaz; bu yuzden istek
+    /// elle <see cref="HttpRequestMessage"/> ile kuruluyor. Trendyol V2 urun silme ucu
+    /// (product/sellers/{id}/products) DELETE metodu + JSON govde bekliyor - eski kod
+    /// PUT kullaniyordu.
+    /// </summary>
+    protected async Task<TResponse> DeleteAsync<TRequest, TResponse>(string url, TRequest request, string? rateLimitCategory = null, CancellationToken ct = default)
+    {
+        using var response = await SendWithPolicyAsync(
+            () => BuildJsonRequest(HttpMethod.Delete, url, request), url, rateLimitCategory, ct);
+
+        return await HandleResponse<TResponse>(response, url);
+    }
+
+    private HttpRequestMessage BuildJsonRequest<TRequest>(HttpMethod method, string url, TRequest request)
+    {
+        var jsonData = JsonSerializer.Serialize(request, _jsonOptions);
+        return new HttpRequestMessage(method, url)
         {
-            if (rateLimitCategory != null && _rateLimiter != null)
-                await _rateLimiter.WaitAsync(rateLimitCategory);
-
-            using var client = CreateClient();
-            HttpResponseMessage response;
-            try
-            {
-                response = await client.DeleteAsync(url);
-            }
-            catch (HttpRequestException) when (transientRetries < MaxTransientRetries)
-            {
-                transientRetries++;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)));
-                continue;
-            }
-
-            if (response.StatusCode == (HttpStatusCode)429)
-            {
-                var retryAfter = response.Headers.RetryAfter?.Delta ?? TimeSpan.FromSeconds(60);
-                await Task.Delay(retryAfter);
-                continue;
-            }
-
-            if (IsTransientError(response.StatusCode) && transientRetries < MaxTransientRetries)
-            {
-                transientRetries++;
-                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, transientRetries)));
-                continue;
-            }
-
-            return response.IsSuccessStatusCode;
-        }
+            Content = new StringContent(jsonData, Encoding.UTF8, "application/json")
+        };
     }
 
     #endregion
@@ -218,7 +272,7 @@ public abstract class IntegrationBase
             or HttpStatusCode.ServiceUnavailable
             or HttpStatusCode.GatewayTimeout;
 
-    private async Task<TResponse> HandleResponse<TResponse>(HttpResponseMessage response)
+    private async Task<TResponse> HandleResponse<TResponse>(HttpResponseMessage response, string url)
     {
         try
         {
@@ -228,9 +282,11 @@ public abstract class IntegrationBase
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                throw new Exception(
-                    $"API istegi basarisiz oldu. StatusCode: {(int)response.StatusCode} - {response.StatusCode}. " +
-                    $"Response: {errorContent}");
+
+                // Tiplendirilmis: cagiran taraf durum koduna bakip KALICI/GECICI ayrimi
+                // yapabiliyor ve ErrorSourceHelper "Sistem Hatasi" yerine dogru etiketi
+                // basiyor. Bkz. MarketplaceApiException.
+                throw new MarketplaceApiException(response.StatusCode, url, errorContent);
             }
 
             await using var responseStream = await response.Content.ReadAsStreamAsync();
@@ -245,8 +301,13 @@ public abstract class IntegrationBase
         {
             throw new JsonException("JSON hatasi: Gecersiz format!", ex);
         }
-        catch (Exception ex) when (ex is not UnauthorizedAccessException and not OutOfMemoryException and not JsonException)
+        catch (Exception ex) when (ex is not UnauthorizedAccessException
+                                      and not OutOfMemoryException
+                                      and not JsonException
+                                      and not MarketplaceApiException)
         {
+            // MarketplaceApiException BU DALA DUSMEMELI: sarilirsa durum kodu kaybolur
+            // ve Classify/IsPermanent yeniden korlesir - duzeltmenin tum amaci buydu.
             throw new Exception($"Istek islenirken hata olustu: {ex.Message}", ex);
         }
     }

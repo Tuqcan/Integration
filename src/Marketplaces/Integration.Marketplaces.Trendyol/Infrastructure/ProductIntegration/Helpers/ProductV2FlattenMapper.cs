@@ -21,6 +21,56 @@ public static class ProductV2FlattenMapper
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
+    /// <summary>
+    /// Icerik seviyesindeki ve varyant seviyesindeki ozellikleri tek listeye birlestirir.
+    ///
+    /// CAKISMADA VARYANT KAZANIR: bir attributeId varyant seviyesinde de geliyorsa
+    /// ayirt edici bilgi varyanta ozgudur; icerik seviyesindeki deger tum varyantlar
+    /// icin ortak olan/varsayilan degerdir ve DUSURULUR.
+    ///
+    /// Birlestirme ID BAZLI, ad bazli DEGIL: V1'de "Renk" (47, serbest metin) ve
+    /// "Web Color" (348, listeden secim) gibi AYNI ADA FARKLI ID ciftleri vardi ve
+    /// ikisi de listede duruyordu. Ad bazli birlestirme bunlardan birini sessizce yerdi.
+    ///
+    /// ############ COK DEGERLI OZELLIK KORUNUR ############
+    /// Onceki surum <c>Dictionary&lt;int, ...&gt;</c> kullaniyordu, yani attributeId basina
+    /// TEK satir tutuyordu. Bir ozellik ayni urunde birden fazla degerle gelebilir
+    /// (<c>allowMultipleAttributeValues = true</c>; ornek: "Uyumlu Marka" 37 secenek) -
+    /// o durumda SONUNCUSU HARIC hepsi sessizce dusuyordu.
+    ///
+    /// Bunun varsayim olmadiginin kaniti tuketici tarafinda: ProductConsumer'in dedup
+    /// anahtari <c>(AttributeId, AttributeValueId, CustomValue)</c> - yani sistem ozellik
+    /// basina COKLU SATIR bekliyor. Sozluk o beklentiyi kiriyordu.
+    ///
+    /// Bugun ulasilabilir DEGIL (28.08.2026 canli olcumu: 190 leaf kategori / 4.151
+    /// attribute satirinda <c>allowMultipleAttributeValues=true</c> HIC gorulmedi), ama
+    /// dogru davranis bedava: artik ID'ye gore EZME yapiliyor, TEKILLEME degil.
+    /// ####################################################
+    /// </summary>
+    private static List<FilterProductAttributeResponseModel> MergeAttributes(
+        List<FilterProductAttributeResponseModel>? contentAttributes,
+        List<FilterProductAttributeResponseModel>? variantAttributes)
+    {
+        if (variantAttributes == null || variantAttributes.Count == 0)
+            return contentAttributes ?? [];
+
+        // Varyantin konustugu attributeId'ler icerik tarafini EZER - ama YALNIZCA
+        // o ID'ler icin. Diger ID'lerin coklu degerleri aynen korunur.
+        var overriddenIds = variantAttributes.Select(a => a.AttributeId).ToHashSet();
+
+        var merged = new List<FilterProductAttributeResponseModel>();
+
+        foreach (var attribute in contentAttributes ?? [])
+        {
+            if (!overriddenIds.Contains(attribute.AttributeId))
+                merged.Add(attribute);
+        }
+
+        merged.AddRange(variantAttributes);
+
+        return merged;
+    }
+
     public static List<FilterProductResponseModel> FlattenApproved(ApprovedProductsV2Response? response)
     {
         var result = new List<FilterProductResponseModel>();
@@ -69,9 +119,14 @@ public static class ProductV2FlattenMapper
                     VatRate = variant.VatRate ?? 0,
                     ProductUrl = variant.ProductUrl,
                     DeliveryDuration = variant.DeliveryOptions?.DeliveryDuration,
+                    Origin = variant.Origin,
 
                     Images = content.Images ?? [],
-                    Attributes = content.Attributes ?? [],
+
+                    // Icerik + varyant ozellikleri BIRLESTIRILIR. V1'de liste duz
+                    // geliyordu; V2 onu iki seviyeye boldu ve yalnizca content'i
+                    // okumak varyanta ozgu ozellikleri (Beden vb.) dusururdu.
+                    Attributes = MergeAttributes(content.Attributes, variant.Attributes),
 
                     // DimensionalWeight / StockUnitType / PlatformListingId / HasActiveCampaign:
                     // V2 vermiyor -> default. Consumer UPDATE'te mevcut degeri korur.
@@ -122,6 +177,7 @@ public static class ProductV2FlattenMapper
                 SalePrice = item.SalePrice ?? 0,
                 VatRate = item.VatRate ?? 0,
                 DimensionalWeight = item.DimensionalWeight ?? 0,
+                Origin = item.Origin,
 
                 Images = item.Images ?? [],
                 Attributes = item.Attributes ?? [],

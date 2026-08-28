@@ -38,6 +38,21 @@ public class CreateProductRequestModel : IRequestModel
 
     public int? DeliveryDuration { get; set; }
 
+    /// <summary>
+    /// Urun mensei (ISO 3166-1 alpha-2, ornek: "CN").
+    ///
+    /// 23.10.2026'dan ITIBAREN ZORUNLU. Trendyol menseiyi attribute'tan bagimsiz
+    /// standart bir alana tasiyor; o tarihten sonra bu alan olmadan gonderilen
+    /// urun yazma istekleri reddedilecek.
+    ///
+    /// Bu metotlar SU AN CAGRILMIYOR (bkz. Faz 3) ve alan CANLI DOGRULANMADI.
+    /// Ileriye donuk hazirlik; nullable birakildi ki bugunku davranis degismesin.
+    /// Constructor'a EKLENMEDI - mevcut cagri imzalari bozulmasin diye
+    /// (nesne kurulduktan sonra atanir).
+    /// </summary>
+    public string? Origin { get; set; }
+
+
     public ProductDeliveryOptionRequestModel? DeliveryOption { get; set; }
 
     public List<ProductImageRequestModel> Images { get; set; }
