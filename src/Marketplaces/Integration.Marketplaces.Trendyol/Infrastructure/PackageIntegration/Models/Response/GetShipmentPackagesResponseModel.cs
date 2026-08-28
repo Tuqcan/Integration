@@ -142,6 +142,49 @@ public class GetShipmentPackagePackageLineResponseModel : IResponseModel
     [JsonIgnore]
     public string Sku => Barcode;
 
+    // ##### FAZ 6.1 / 6.3 - SATIRDAKI YENI ALANLAR #####
+
+    /// <summary>
+    /// Trendyol'un kategori kimligi. Yanitta %100 dolulukla geliyor.
+    ///
+    /// HANGI KARARI DEGISTIRIYOR: komisyon bugun su zincirle cozuluyor:
+    ///     barcode -> TY_Product.PimCategoryId -> TY_User_Categories / TY_Categories
+    /// URUN HENUZ SENKRONLANMAMISSA productCache bos kalir ve KOMISYON 0 OLUR.
+    /// Bu alan, urun senkronundan BAGIMSIZ bir yedek zincir sagliyor.
+    ///
+    /// ON KOSUL DOGRULANDI (28.08.2026): kategori uzaylari AYNI.
+    /// productCategoryId=5505 -> TY_Categories "Kablo Aksesuari" (%23),
+    /// 2710 -> "Tepsi" (%21) - ikisi de siparisin urunuyle TUTARLI.
+    /// Katalog geneli: TY_Product.PimCategoryId -> TY_Categories eslesmesi
+    /// 203.447/203.447 (%100). Yanlis komisyon riski YOK.
+    ///
+    /// DB'YE YAZILMAZ - yalnizca komisyon cozumunde yedek olarak okunur.
+    /// </summary>
+    [JsonPropertyName("productCategoryId")]
+    public int? ProductCategoryId { get; set; }
+
+    /// <summary>
+    /// Iptali kimin baslattigi.
+    ///
+    /// HANGI KARARI DEGISTIRIYOR: siparis listesi iptali RENKLENDIRIYOR ama NEDENINI
+    /// gosteremiyor. Satici kaynakli iptal (UnSupplied) ile musteri iptali FARKLI
+    /// aksiyon gerektirir - biri stok/tedarik sorunu, digeri degil.
+    /// </summary>
+    [JsonPropertyName("cancelledBy")]
+    public string? CancelledBy { get; set; }
+
+    /// <inheritdoc cref="CancelledBy"/>
+    [JsonPropertyName("cancelReason")]
+    public string? CancelReason { get; set; }
+
+    /// <inheritdoc cref="CancelledBy"/>
+    [JsonPropertyName("cancelReasonCode")]
+    public string? CancelReasonCode { get; set; }
+
+    // OKU AMA YAZMA: lineTotalDiscount modellenmedi - Discount + TyDiscount ile
+    // TURETILEBILIR. Turetilebilen bir degeri saklamak IKI DOGRULUK KAYNAGI yaratir.
+    // businessUnit ve defectiveClaimListingInsight de modellenmedi (bkz. paket modeli).
+
     // KALDIRILDI (Faz 1.7): DiscountDetails (+ 3 alt alani). 3 repo grep'i ile dogrulandi:
     // is tuketicisi 0 - deserialize edilip atiliyordu. Ileride lazim olursa kanonik
     // adlarla (lineItemSellerDiscount / lineItemTyDiscount / lineItemPrice) geri eklenir.
@@ -348,6 +391,65 @@ public class GetShipmentPackagePackageResponseModel : IResponseModel
 
     [JsonPropertyName("containsDangerousProduct")]
     public bool ContainsDangerousProduct { get; set; }
+
+    // ##### FAZ 6.1 - DB KOLONU HAK EDEN YENI ALANLAR #####
+    // Olcut TEK: bir alan ancak HANGI KARARI DEGISTIRDIGI yazilabiliyorsa kolon hak eder.
+    // Cevap yoksa modelde okunur (bedava), DB'ye yazilmaz (bkz. asagidaki "OKU AMA YAZMA").
+
+    /// <summary>
+    /// Satis kanali. 1 = CORE, 25 = Luxe.
+    ///
+    /// HANGI KARARI DEGISTIRIYOR: Luxe'un komisyon ve hakedis rejimi FARKLIDIR; kar
+    /// hesabi bugun ikisini ayirt etmiyor. Luxe satan ilk kullanicida SESSIZCE YANLIS
+    /// KAR uretir.
+    ///
+    /// ⛔ ENUM'A CEVIRME. Olcumde dokumanda OLMAYAN bir deger de gorüldu: 9 (5 paket).
+    /// Bilinmeyen bir kanali "Unkown" enum'una dusurmek, PackageStatus'te yasanan
+    /// tuzagin aynisini uretirdi: ham deger kaybolur ve geriye donuk cozulemez.
+    /// Ham INT saklanir, etiket UI'da cozulur.
+    /// </summary>
+    [JsonPropertyName("channelId")]
+    public int? ChannelId { get; set; }
+
+    /// <summary>
+    /// Pazaryerinin KENDI desisi.
+    ///
+    /// HANGI KARARI DEGISTIRIYOR: GetCargoDeciWarning ekrani desiyi bugun
+    /// TY_Invoice_Cargo'dan (FATURA) aliyor - yani fatura kesilene kadar uyari YOK.
+    /// API desiyi siparisle BIRLIKTE veriyor -> FATURA ONCESI desi sapmasi yakalanir.
+    /// </summary>
+    [JsonPropertyName("cargoDeci")]
+    public decimal? CargoDeci { get; set; }
+
+    /// <summary>
+    /// Paketin nasil olustugu: order-creation / split / cancel / transfer.
+    ///
+    /// HANGI KARARI DEGISTIRIYOR: createdBy='cancel' olan paket, iptal edilen bir
+    /// paketin KALANIDIR. <see cref="OriginPackageIds"/> aslini gosterir. Kismi iade
+    /// muhasebesinde bu bag BUGUN YOK.
+    /// </summary>
+    [JsonPropertyName("createdBy")]
+    public string? CreatedBy { get; set; }
+
+    /// <summary>
+    /// Bolunme/iptal oncesi paket kimlikleri. Yalniz createdBy=cancel paketlerde dolu.
+    /// <inheritdoc cref="CreatedBy"/>
+    /// </summary>
+    [JsonPropertyName("originPackageIds")]
+    public List<long>? OriginPackageIds { get; set; }
+
+    // ##### OKU AMA DB'YE YAZMA #####
+    // Asagidaki alanlar modelde OKUNUR (bedava) ama DB'ye YAZILMAZ - "hangi karari
+    // degistiriyor" sorusunun bugun bir cevabi yok:
+    //   invoiceStatus / invoiceNumber : GelirUP fatura KESMIYOR; invoiceNumber ayrica
+    //                                   1.322 pakette %0 dolu - bos alani saklamak yaniltici
+    //   warehouseId                   : coklu depo raporu talebi yok
+    //   is4P / hsCode                 : "micro" zaten var, kullanici yok
+    //   businessUnit                  : Trendyol'un IC siniflandirmasi; PimCategoryId var
+    //   discountDisplays              : kampanya adi kirilimi; toplam TotalDiscount'ta
+    //   sellerDeliveryMethod / sellerOtpCode / taxNumber : TR pazaryerinde DAIMA bos
+    //   supplierId                    : DAIMA 0 (Faz 4.3)
+    // Modellenmiyorlar cunku okunmayan bir alani DOGRU tutmak da bakim borcudur.
 
     // ##### API'DEN GELMEYEN, KODUN KENDI DAMGALADIGI ALANLAR #####
     // Bu ikisi Trendyol yanitinda YOKTUR; publisher tarafindan atanir ve mesaj

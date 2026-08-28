@@ -68,48 +68,83 @@ public class TrendyolPackageIntegration : TrendyolIntegrationBase, ITrendyolPack
         return response;
     }
 
+    // ####################################################################
+    // OLU YAZMA UCLARI - PATH'LER DUZELTILDI (Faz 6.5, 28.08.2026)
+    //
+    // Asagidaki 9 metodun HICBIRININ CAGIRANI YOK. Hepsi eski "suppliers/{id}/..."
+    // onekini tasiyordu ve o onek CANLI OLCUMLE 9/9 OLU bulundu (HTTP 556).
+    // Yani bu metotlar "muhtemelen yanlis" degildi, BUGUN CALISMIYORLARDI.
+    //
+    // PATH'LER NASIL DOGRULANDI: GET yerine ucun BEKLEDIGI gercek metot kullanilinca
+    // gateway ayrim yapiyor:
+    //     400 -> path VAR (govde gecersiz diye reddedildi)
+    //     401 -> path YOK (uydurma bir path de 401 donuyor - kontrol satiriyla kanitlandi)
+    //     556 -> uc olu
+    // Uretim verisi korundu: paket kimligi 1 (gercek kimlikler 2.957.655.730+;
+    // 1..1000 araliginda 0 kayit) ve govde {} (gecersiz). Sonuclarin tamami 4xx -
+    // hicbir istek islenmedi, hicbir siparis degismedi.
+    //
+    // NE DOGRULANDI, NE DOGRULANMADI:
+    //   Dogrulandi   : path'lerin VARLIGI + HTTP METODU (PUT/POST ayrimi)
+    //   DOGRULANMADI : istek/yanit GOVDE SEMASI, alan adlari, zorunluluklar
+    // Govde semasi icin gercek bir paket uzerinde YAZMA gerekirdi; bilincli olarak
+    // yapilmadi. Bu yuzden hepsi [Obsolete] ve kullanmadan once STAGE'DE test edilmeli.
+    // ####################################################################
+
+    /// <summary>
+    /// Path CANLI DOGRULANDI (28.08.2026). GOVDE SEMASI DOGRULANMADI.
+    /// </summary>
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> UpdateTrackingNumberAsync(long shipmentPackageId, UpdateTrackingNumberRequestModel updateTrackingNumberRequestModel)
     {
-        return await PutAsync<UpdateTrackingNumberRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/{shipmentPackageId}/update-tracking-number", updateTrackingNumberRequestModel, TrendyolRateLimitCategories.TrackingNumber);
+        return await PutAsync<UpdateTrackingNumberRequestModel, bool>($"{GetBaseUrl()}order/sellers/{SupplierId}/shipment-packages/{shipmentPackageId}/update-tracking-number", updateTrackingNumberRequestModel, TrendyolRateLimitCategories.TrackingNumber);
     }
 
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> UpdatePackageAsync(long shipmentPackageId, UpdatePackageRequestModel updatePackageRequestModel)
     {
-        return await PutAsync<UpdatePackageRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/shipment-packages/{shipmentPackageId}", updatePackageRequestModel, TrendyolRateLimitCategories.PackageStatus);
+        return await PutAsync<UpdatePackageRequestModel, bool>($"{GetBaseUrl()}order/sellers/{SupplierId}/shipment-packages/{shipmentPackageId}", updatePackageRequestModel, TrendyolRateLimitCategories.PackageStatus);
     }
 
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> SendInvoiceLinkAsync(AddInvoiceLinkRequestModel addInvoiceLinkRequestModel)
     {
-        return await PostAsync<AddInvoiceLinkRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/supplier-invoice-links", addInvoiceLinkRequestModel, TrendyolRateLimitCategories.PackageStatus);
+        return await PostAsync<AddInvoiceLinkRequestModel, bool>($"{GetBaseUrl()}sellers/{SupplierId}/seller-invoice-links", addInvoiceLinkRequestModel, TrendyolRateLimitCategories.PackageStatus);
     }
 
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> DeleteInvoiceLinkAsync(DeleteInvoiceLinkRequestModel deleteInvoiceLinkRequestModel)
     {
-        return await PostAsync<DeleteInvoiceLinkRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/supplier-invoice-links/delete", deleteInvoiceLinkRequestModel, TrendyolRateLimitCategories.PackageStatus);
+        return await PostAsync<DeleteInvoiceLinkRequestModel, bool>($"{GetBaseUrl()}sellers/{SupplierId}/seller-invoice-links/delete", deleteInvoiceLinkRequestModel, TrendyolRateLimitCategories.PackageStatus);
     }
 
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> SplitMultiPackageByQuantityAsync(long shipmentPackageId, SplitMultiPackageByQuantityRequestModel splitMultiPackageByQuantityRequestModel)
     {
-        return await PostAsync<SplitMultiPackageByQuantityRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/shipment-packages/{shipmentPackageId}/split-packages", splitMultiPackageByQuantityRequestModel, TrendyolRateLimitCategories.SplitPackages);
+        return await PostAsync<SplitMultiPackageByQuantityRequestModel, bool>($"{GetBaseUrl()}order/sellers/{SupplierId}/shipment-packages/{shipmentPackageId}/split-packages", splitMultiPackageByQuantityRequestModel, TrendyolRateLimitCategories.SplitPackages);
     }
 
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> SplitMultiShipmentPackageAsync(long shipmentPackageId, SplitMultiShipmentPackageRequestModel splitMultiShipmentPackageRequestModel)
     {
-        return await PostAsync<SplitMultiShipmentPackageRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/shipment-packages/{shipmentPackageId}/split", splitMultiShipmentPackageRequestModel, TrendyolRateLimitCategories.SplitPackages);
+        return await PostAsync<SplitMultiShipmentPackageRequestModel, bool>($"{GetBaseUrl()}order/sellers/{SupplierId}/shipment-packages/{shipmentPackageId}/split", splitMultiShipmentPackageRequestModel, TrendyolRateLimitCategories.SplitPackages);
     }
 
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> SplitShipmentPackageAsync(long shipmentPackageId, SplitShipmentPackageRequestModel splitShipmentPackageRequestModel)
     {
-        return await PostAsync<SplitShipmentPackageRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/shipment-packages/{shipmentPackageId}/multi-split", splitShipmentPackageRequestModel, TrendyolRateLimitCategories.SplitPackages);
+        return await PostAsync<SplitShipmentPackageRequestModel, bool>($"{GetBaseUrl()}order/sellers/{SupplierId}/shipment-packages/{shipmentPackageId}/multi-split", splitShipmentPackageRequestModel, TrendyolRateLimitCategories.SplitPackages);
     }
 
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> SplitShipmentPackageByQuantityAsync(long shipmentPackageId, SplitMultiPackageByQuantityRequestModel splitMultiPackageByQuantityRequestModel)
     {
-        return await PostAsync<SplitMultiPackageByQuantityRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/shipment-packages/{shipmentPackageId}/quantity-split", splitMultiPackageByQuantityRequestModel, TrendyolRateLimitCategories.SplitPackages);
+        return await PostAsync<SplitMultiPackageByQuantityRequestModel, bool>($"{GetBaseUrl()}order/sellers/{SupplierId}/shipment-packages/{shipmentPackageId}/quantity-split", splitMultiPackageByQuantityRequestModel, TrendyolRateLimitCategories.SplitPackages);
     }
 
+    [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> UpdateBoxInfoAsync(long shipmentPackageId, UpdateBoxInfoRequestModel updateBoxInfoRequestModel)
     {
-        return await PostAsync<UpdateBoxInfoRequestModel, bool>($"{GetBaseUrl()}suppliers/{SupplierId}/shipment-packages/{shipmentPackageId}/box-info", updateBoxInfoRequestModel, TrendyolRateLimitCategories.BoxInfo);
+        return await PutAsync<UpdateBoxInfoRequestModel, bool>($"{GetBaseUrl()}order/sellers/{SupplierId}/shipment-packages/{shipmentPackageId}/box-info", updateBoxInfoRequestModel, TrendyolRateLimitCategories.BoxInfo);
     }
 }
