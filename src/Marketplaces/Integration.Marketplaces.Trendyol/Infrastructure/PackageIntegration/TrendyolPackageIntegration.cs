@@ -1,4 +1,4 @@
-using Integration.Hub;
+﻿using Integration.Hub;
 using Integration.Marketplaces.Trendyol.Infrastructure.PackageIntegration.Models.Request;
 using Integration.Marketplaces.Trendyol.Infrastructure.PackageIntegration.Models.Response;
 using Integration.Marketplaces.Trendyol.Infrastructure.RateLimiting;
@@ -106,12 +106,34 @@ public class TrendyolPackageIntegration : TrendyolIntegrationBase, ITrendyolPack
         return await PutAsync<UpdatePackageRequestModel, bool>($"{GetBaseUrl()}order/sellers/{SupplierId}/shipment-packages/{shipmentPackageId}", updatePackageRequestModel, TrendyolRateLimitCategories.PackageStatus);
     }
 
+    /// <summary>
+    /// ############ KOVA SECIMI BELGELENMEMIS BIR VARSAYIMDIR (Faz 2.2) ############
+    /// Bu iki fatura linki ucu PackageStatus kovasindan harciyor, ama Trendyol'un RESMI
+    /// limit tablosunda FATURA LINKI SATIRI YOK. Kova secimi olculmus bir gercek degil,
+    /// eski koddan devralinan bir TAHMINDIR.
+    ///
+    /// Bugun etkisiz - cagirani yok. Metot bir gun kullanilirsa kova ONCE dogrulanmali:
+    /// yanlis kova, fatura linki trafigini paket statu bildiriminin kotasindan yer ve
+    /// iki isi de birbirine yavaslatir.
+    /// ###########################################################################
+    /// </summary>
     [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> SendInvoiceLinkAsync(AddInvoiceLinkRequestModel addInvoiceLinkRequestModel)
     {
         return await PostAsync<AddInvoiceLinkRequestModel, bool>($"{GetBaseUrl()}sellers/{SupplierId}/seller-invoice-links", addInvoiceLinkRequestModel, TrendyolRateLimitCategories.PackageStatus);
     }
 
+    /// <summary>
+    /// ############ KOVA SECIMI BELGELENMEMIS BIR VARSAYIMDIR (Faz 2.2) ############
+    /// Bu iki fatura linki ucu PackageStatus kovasindan harciyor, ama Trendyol'un RESMI
+    /// limit tablosunda FATURA LINKI SATIRI YOK. Kova secimi olculmus bir gercek degil,
+    /// eski koddan devralinan bir TAHMINDIR.
+    ///
+    /// Bugun etkisiz - cagirani yok. Metot bir gun kullanilirsa kova ONCE dogrulanmali:
+    /// yanlis kova, fatura linki trafigini paket statu bildiriminin kotasindan yer ve
+    /// iki isi de birbirine yavaslatir.
+    /// ###########################################################################
+    /// </summary>
     [Obsolete("Cagirani yok. Path canli dogrulandi (28.08.2026) ama GOVDE SEMASI dogrulanmadi - kullanmadan once stage'de test edin.")]
     public async Task<bool> DeleteInvoiceLinkAsync(DeleteInvoiceLinkRequestModel deleteInvoiceLinkRequestModel)
     {

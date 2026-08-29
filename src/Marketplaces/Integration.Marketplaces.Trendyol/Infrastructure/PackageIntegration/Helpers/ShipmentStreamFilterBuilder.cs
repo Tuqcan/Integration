@@ -1,4 +1,4 @@
-using Integration.Hub;
+﻿using Integration.Hub;
 using Integration.Marketplaces.Trendyol.Infrastructure.OrderIntegration.Constants;
 
 namespace Integration.Marketplaces.Trendyol.Infrastructure.OrderIntegration.Helpers;
@@ -37,8 +37,6 @@ public class ShipmentStreamFilterBuilder : IFilterBuilder
 
     /// <summary>Olculen tavan: ustu SESSIZCE 200'e kirpiliyor. Varsayilan 50.</summary>
     public const int MaxSize = 200;
-
-    private static readonly long MaxWindowMs = (long)TimeSpan.FromDays(MaxWindowDays).TotalMilliseconds;
 
     private readonly Dictionary<string, string> _p = new();
 
