@@ -170,15 +170,29 @@ public class GetShipmentPackagePackageLineResponseModel : IResponseModel
     /// gosteremiyor. Satici kaynakli iptal (UnSupplied) ile musteri iptali FARKLI
     /// aksiyon gerektirir - biri stok/tedarik sorunu, digeri degil.
     /// </summary>
+    /// ############ TIPI DOGRULANMAMISTI - 01.09.2026'DA URETIMDE PATLADI ############
+    /// Bu uc alan Faz 6'da <c>string?</c> olarak modellendi. Trendyol
+    /// <c>cancelReasonCode</c>'u SAYI gonderiyor ve System.Text.Json bir alanda
+    /// patlayinca TUM SAYFAYI birakiyor -> 200 paket birden kayboluyor.
+    /// (Deploy sonrasi HyperCep icin 4 turun 4'u dustu, hic siparis yazilmadi.)
+    ///
+    /// Ucune de <see cref="TolerantStringConverter"/> uygulandi: sayi da metin de
+    /// kabul edilir. Ayni ailedeler ve fixture'da UCU DE yoktu (ornek pakette iptal
+    /// satiri yok), yani ucunun de tipi ayni sekilde DOGRULANMAMISTI - biri patladiysa
+    /// digerlerini "muhtemelen metindir" diye birakmak ayni hatayi tekrar etmek olur.
+    /// #############################################################################
     [JsonPropertyName("cancelledBy")]
+    [JsonConverter(typeof(TolerantStringConverter))]
     public string? CancelledBy { get; set; }
 
     /// <inheritdoc cref="CancelledBy"/>
     [JsonPropertyName("cancelReason")]
+    [JsonConverter(typeof(TolerantStringConverter))]
     public string? CancelReason { get; set; }
 
     /// <inheritdoc cref="CancelledBy"/>
     [JsonPropertyName("cancelReasonCode")]
+    [JsonConverter(typeof(TolerantStringConverter))]
     public string? CancelReasonCode { get; set; }
 
     // OKU AMA YAZMA: lineTotalDiscount modellenmedi - Discount + TyDiscount ile
