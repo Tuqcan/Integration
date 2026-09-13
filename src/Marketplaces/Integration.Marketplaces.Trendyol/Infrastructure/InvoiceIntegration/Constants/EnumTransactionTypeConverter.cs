@@ -32,7 +32,13 @@ public class EnumTransactionTypeConverter : JsonConverter<EnumTransactionType>
     { "Komisyon Pozitif İptal", EnumTransactionType.CommissionPositiveCancel },
     { "Komisyon Negatif İptal", EnumTransactionType.CommissionNegativeCancel },
     { "Link ile Ödeme", EnumTransactionType.PayByLink },
-    { "PayByLink", EnumTransactionType.PayByLink }
+    { "PayByLink", EnumTransactionType.PayByLink },
+
+    // Trendyol'un dokumante ETMEDIGI deger: `transactionType=PayByLink` istegine
+    // yanit olarak doner (13.09.2026 canli olcum, 5 tedarikci / 01.06-13.09 taramasi).
+    // Eslenmedigi surece Unknown'a duser -> her gecelik tam taramada "Bilinmeyen
+    // Islem Tipi" maili uretir ve kayit komisyon turetmesinden DUSER.
+    { "Yenilenmiş Satış", EnumTransactionType.RefurbishedSale }
 };
 
     public override EnumTransactionType Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
